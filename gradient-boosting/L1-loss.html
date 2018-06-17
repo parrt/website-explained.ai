@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>Gradient boosting: Heading in the right direction</title>
+</head>
+<body>
+<h1>Gradient boosting: Heading in the right direction</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy Howard</a></p>
+
+<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:1.1">Chasing the sign vector</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.2">Two perspectives on training weak models for L1 loss</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.3">GBM optimizing MAE by example</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.4">Comparing GBM trees that optimize MSE and MAE </a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#alg:l1">GBM algorithm to minimize L1 loss</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+<p>In our previous article, <a href="L2-loss.html">Gradient boosting: Distance to target</a>, our weak models trained regression tree stumps on the residual vector, <img style="vertical-align: -3.4125pt;" src="images/eqn-2F39CA104AA86152996CF2FD38DE6191-depth003.25.svg">, which includes the magnitude not just the direction of <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> from our the previous composite model's prediction, <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">.  Unfortunately, training the weak models on a direction vector that includes the residual magnitude makes the composite model chase outliers.   This occurs because mean computations are easily skewed by outliers and our regression tree stumps yield predictions using the mean of the target values in a leaf.  For noisy target variables, it makes more sense to focus on the <i>direction</i> of <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> from <img style="vertical-align: -2.8455pt;" src="images/eqn-23BFE44781970D05C5B2ADE4DAA0CB32-depth002.71.svg"> rather than the magnitude and direction. </p>
+
+
+<h2 id="sec:1.1">Chasing the sign vector</h2>
+
+<p>This brings us to the second commonly-used direction vector with gradient boosting, which we can call the <i>sign vector</i>: <img style="vertical-align: -3.4125pt;" src="images/eqn-256A866361393D2B9CF7E565DA2B0693-depth003.25.svg">. The sign vector elements are either -1, 0, or +1, one value for each observation's target value.   No matter how distant the true target is from our current prediction, we'll train weak models using just the direction info without the magnitude. It gets weirder, though. While we train the weak models on the sign vector, the weak models are modified to predict a residual not a sign vector! (A stump leaf predicts the median of all the residuals within that leaf, to be precise.) More on this later.</p>
+<p>If there are outliers in the target variable that we cannot remove, training weak models on just the direction is better than both direction and magnitude. We'll show in <a href="descent.html">Gradient boosting performs gradient descent</a> that using <img style="vertical-align: -3.4125pt;" src="images/eqn-974949FEABFE46535ECB8FBCB9C35693-depth003.25.svg"> as our direction vector leads to a solution that optimizes the model according to the mean absolute value (MAE) or <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg">  <i>loss function</i>: <img style="vertical-align: -3.4754999pt;" src="images/eqn-8F89F0660B74E4B0AEF5E7B09C9C02E7-depth003.31.svg"> for <span class=eqn>N</span> observations. </p>
+<p>Optimizing the MAE means we should start with the median, not the mean, as our initial model, <img style="vertical-align: -2.856pt;" src="images/eqn-78155D2EC4B025A5AC903D6F8611756C-depth002.72.svg">, since the median of <span class=eqn>y</span> minimizes the <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss. (The median is the best single-value approximation of <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss.)  Other than that, we use the same recurrence relations to compute composite models based upon the sign of the residual vector:</p>
+<div><img class="blkeqn" src="images/latex-01F1636EC2FC3D9352A336069D8CB914.svg" alt="
+\begin{eqnarray*}
+F_0(\vec x) &=& f_0(\vec x)\\
+F_m(\vec x) &=& F_{m-1}(\vec x) + \eta \Delta_m(\vec x)\\
+\end{eqnarray*}
+" width=""></div>
+<p>Let's assume <img style="vertical-align: -2.7825pt;" src="images/eqn-D278E4DE491CE547C09863A180936C39-depth002.65.svg"> so that it drops out of the equation to simplify our discussion, but keep in mind that it's an important hyper-parameter you need to set in practice.  Also, recall that <img style="vertical-align: -3.4125pt;" src="images/eqn-2FAD4E64F2A57ED16C39CE8A079469D7-depth003.25.svg"> yields a predicted value, <span class=eqn>y<sub>i</sub></span>, but <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> yields a predicted target vector, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">, one value for each <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg"> feature row-vector in matrix <span class=eqn>X</span>. </p>
+<p>Here is the rental data again along with the initial <img style="vertical-align: -2.1944997pt;" src="images/eqn-F19B4656EC11CE4B8F1D59857C8291BF-depth002.09.svg"> model (median of rent vector <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">), the first residual, and the first sign vector:</p>
+<div><img class="blkeqn" src="images/latex-D052265767D4040E517231D99A7A5DE8.svg" alt="
+{\small
+\begin{tabular}[t]{rrrrr}
+{\bf sqfeet} & {\bf rent} & $F_0$ & $\vec y$-$F_0$ & $sign(\vec y$-$F_0)$ \\
+\hline
+750 & 1160 & 1280 & -120 & -1\\
+800 & 1200 & 1280 & -80 & -1\\
+850 & 1280 & 1280 & 0 & 0\\
+900 & 1450 & 1280 & 170 & 1\\
+950 & 2000 & 1280 & 720 & 1\\
+\end{tabular}
+}
+" width=""></div>
+<p>Visually, we can see that the first sign vector has components pointing in the right direction of the true target elements, <span class=eqn>y<sub>i</sub></span>, from <img style="vertical-align: -3.4125pt;" src="images/eqn-180EACFD76DFF79637353384716FDA65-depth003.25.svg">:</p>
+<img src="images/L1-loss/L1-loss_examples_2.svg"
+  width="38%%"
+>
+<p>As mentioned above, this version of a GBM is tricky so let's look in detail at how regression tree stumps make predictions in this case.</p>
+
+
+<h2 id="sec:1.2">Two perspectives on training weak models for L1 loss</h2>
+
+<p>Our goal is to create a series of nudges, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, that gradually shift our initial approximation, <img style="vertical-align: -3.4125pt;" src="images/eqn-180EACFD76DFF79637353384716FDA65-depth003.25.svg">, towards the true target rent vector, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. The first stump, <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg">, should be trained on <img style="vertical-align: -3.4125pt;" src="images/eqn-81E992BCBDADC567512DF8C4DF8007ED-depth003.25.svg">, as opposed to the residual vector itself, and let's choose a split point of 850 because that groups the sign values into two similar (low variance) groups, <img style="vertical-align: -3.4125pt;" src="images/eqn-B95B0B3BC23F39B3C04BC2BAF211BA5B-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-BAB678B7941C5F9552AA1FAEB5C5B2E7-depth003.25.svg">. Because we are dealing with <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> absolute difference and not <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> squared difference, stumps should predict the median, not the mean, of the observations in each leaf. That means <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> would predict -1 for <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"><825 and 1 for <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">>=825:</p>
+<p><img src="images/stubs-mae-delta1.svg" width="30%">  </p>
+<p>Without the distance to the target as part of our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> nudges, however, the composite model <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> would step towards rent target vector <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> very slowly, one dollar at a time per observation. We need to weight the <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> predictions so that the algorithm takes bigger steps. Unfortunately, we can't use a single weight per stage, like <img style="vertical-align: -3.4125pt;" src="images/eqn-71C63057939C6E62F4068741DA52AC6C-depth003.25.svg">, because it might force the composite model predictions to oscillate around but never reach an accurate prediction. A global weight per stage is just too coarse to allow tight convergence to <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> for all <img style="vertical-align: -2.7825pt;" src="images/eqn-7F9658A8611D26374A7798B5CAD44C84-depth002.65.svg"> simultaneously. For example, if we set <img style="vertical-align: -2.0475pt;" src="images/eqn-2A7806A1322A308C854F3BDB6B99E189-depth001.95.svg"> to get the fourth and fifth data point predictions from median 1280 to 1480 (closer to their 1450, 2000 target values) in one step, <img style="vertical-align: -2.0475pt;" src="images/eqn-DB007D6A923C2909D42C4292BFFCA5F0-depth001.95.svg"> would also push the other points very far below their true targets:</p>
+<img src="images/L1-loss/L1-loss_examples_3.svg"
+  width="32%%"
+>
+<p>When training weak models on the residual vector, in the previous article, each regression tree leaf predicted the average residual value for the observations in that leaf. Such a prediction is the same mathematically as predicting a sign, -1 or 1, then weighting it by the (absolute value of the) average residual. (In our <a href="descent.html#alg:general">general algorithm section</a>, we prove the optimal weight is the average residual.) That gives us a hint that we could use a weight per leaf to scale the predictions derived from the sign vector, but how do we compute those weights?</p>
+<p>We know exactly how we should push each <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> because we have the residuals, <img style="vertical-align: -3.4125pt;" src="images/eqn-F686CC70B2D6C4A51C4D1114BCBAF596-depth003.25.svg">. The problem is that GBMs never add residual vectors directly to move the overall prediction, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">. GBMs adjust each <img style="vertical-align: -2.7825pt;" src="images/eqn-7F9658A8611D26374A7798B5CAD44C84-depth002.65.svg"> using the prediction of a weak model, <img style="vertical-align: -3.4125pt;" src="images/eqn-6122F1CE8F85F2DAA8A18D8EDED9EF76-depth003.25.svg">, which means that we must choose a single value to represent the predictions for a whole group of residuals (all residuals within a leaf). The best single value to represent the group of residuals is either the mean or the median, depending on whether we are optimizing MSE or MAE, respectively. The idea is to pick a weight that jumps the next prediction, <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg">, into the &ldquo;middle&rdquo; the current residuals for the associated leaf.</p>
+<p>Instead of scaling each leaf's direction prediction by a weight, we can think of this process as having each stump leaf predict the median residual of the observations in that leaf, rather than predicting the direction and scaling by the median. Without alteration, the leaves of a standard regression tree stump would predict the average <i>sign</i> of the residual, not the median residual. This fact makes the MSE and MAE approaches seem nearly identical. That's a bit weird and an incredibly subtle point, which we'll explore below in more detail. For now, let's finish the GBM construction.</p>
+
+
+<h2 id="sec:1.3">GBM optimizing MAE by example</h2>
+
+<p>A GBM that optimizes MAE uses <img style="vertical-align: -3.4125pt;" src="images/eqn-6122F1CE8F85F2DAA8A18D8EDED9EF76-depth003.25.svg"> weak models that predict median residual values. Here are the intermediate results of residuals and weak learners for the <img style="vertical-align: -0.5pt;" src="images/eqn-FA877101584A13872A537A02E7081751-depth000.20.svg"> case (with learning rate <img style="vertical-align: -2.7825pt;" src="images/eqn-58044924774545D0E2638E03B13CBB35-depth002.65.svg">):</p>
+<div><img class="blkeqn" src="images/latex-89EEE54C7CD81D86A27EEEC752599DDD.svg" alt="
+{\small
+\setlength{\tabcolsep}{0.5em}
+\begin{tabular}[t]{rrrrrrrrrrr}
+&&& $sign$ &&&& $sign$\vspace{-1mm}\\  
+$\Delta_1$ & $F_1$ & $\vec y$-$F_1$ & $\vec y$-$F_1$ & $\Delta_2$ & $F_2$ & $\vec y$-$F_2$ & $\vec y$-$F_2$ & $\Delta_3$ & $F_3$\\
+\hline
+-100 & 1180 & -20 & -1 & -20 & 1160 & 0 & 0 & -5 & 1155\\
+-100 & 1180 & 20 & 1 & 10 & 1190 & 10 & 1 & -5 & 1185\\
+170 & 1450 & -170 & -1 & 10 & 1460 & -180 & -1 & -5 & 1455\\
+170 & 1450 & 0 & 0 & 10 & 1460 & -10 & -1 & -5 & 1455\\
+170 & 1450 & 550 & 1 & 10 & 1460 & 540 & 1 & 540 & 2000\\
+\end{tabular}
+}
+" width=""></div>
+<p>The split points are 825, 775, 925 for the <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> models and here are the resulting stumps:</p>
+<p><img src="images/stubs-mae.svg" width="90%"></p>
+<p>Let's look at the <img style="vertical-align: -2.7825pt;" src="images/eqn-E471BAD80638DB43B0CB5B34408F8C1A-depth002.65.svg"> residuals and the prediction of the <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> models trained on the sign vectors but predicting the median of the residuals in the leaf nodes.</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th align=center ><img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> for MAE <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> optimization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center>
+<img src="images/L1-loss/L1-loss_examples_4.svg"
+  width="90%%"
+>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>The blue dots are the residual vector elements whose sign value is used to train <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models, the dashed lines are the predictions made by <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, and the dotted line is the origin at 0. The residual vector elements get closer to zero in general as they did in the previous article (trained on the residual not sign vector). In this case, however, the weak models are clearly not chasing the outlier, which is finally dealt with using <img style="vertical-align: -2.1944997pt;" src="images/eqn-20B2922F9886239EBD293C2C3AAF72AD-depth002.09.svg">. In contrast, the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg">-optimizing model from the previous article used <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> to immediately bring that outlier residual to 0.</p>
+<p>Despite the imprecision of the weak models, the weighted <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> predictions nudge <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> closer and closer to the true <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. Here is a sequence of diagrams showing the composite model predictions as we add weak models:</p>
+<img src="images/L1-loss/L1-loss_examples_5.svg"
+  width="90%%"
+>
+<p>So now we've looked at two similar GBM construction approaches, one that trains weak models on residual vectors and the other that trains weak models on sign vectors. The former predicts the average residual value for observations in the leaf associated with an unknown <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> whereas the latter predicts the median residual value. The effect of these differences is that the former optimizes the mean squared error and the latter optimizes the mean absolute error over the training set. Why this is true mathematically is the focus of the next article and final article, <a href="descent.html">Gradient boosting performs gradient descent</a>.  You can jump straight there if you like, but we also provide an empirical look at the difference between the two GBMs in the next section.</p>
+
+
+<h2 id="sec:1.4">Comparing GBM trees that optimize MSE and MAE </h2>
+
+<p>GBMs that optimize MSE (<img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss) and MAE (<img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss) both train regression trees, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, on direction vectors.  The first difference between them is that MSE-optimizing GBMs train trees on residual vectors and MAE GBMs train trees on sign vectors. The goal of training regression tree models is to group similar direction vectors into leaf nodes in both cases.  Because they are training on different vectors (residuals versus signs), the trees will group the observations in the training data differently. The training of the weak model trees (and not the overall GBM) always computes split points by trying to minimize the squared difference of residual or sign values into two groups, even in the MAE case.  </p>
+<p>The second difference between the GBMs is that tree leaves of MSE GBMs predict the average of the residuals, <img style="vertical-align: -3.4125pt;" src="images/eqn-A0CE5F491358F33B55AF2C02A827775A-depth003.25.svg">, values for all <span class=eqn>i</span> observations in that leaf, whereas MAE GBM tree leaves predict the median of the residual. <b>Weak models for both GBMs predict residuals given a feature vector for an observation.</b></p>
+<p>Just to drive this home, MSE GBMs train on residual vectors and the leaves predict the average residual. MAE GBMs train on sign vectors, but the leaves predict residuals like MSE GBMs, albeit the median, not the average residual. This mechanism is strange because models don't typically train on one space (sign values) and predict values in a different space (residuals). It's perhaps easier to think of MAE GBMs as training on and predicting sign vectors (in -1, 0, +1) but then weighting  predictions by the absolute value of the median of the residuals. This approach would mean we don't have to alter the <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> leaf predictions after constructing the regression trees. (The algorithm presented later does alter the trees.) Friedman shows that, for  regression tree weak models, the optimal weight, <span class=eqn>w</span>, associated with any leaf, <span class=eqn>l</span>, is computed by finding <span class=eqn>w</span> that minimizes:</p>
+<div><img class="blkeqn" src="images/blkeqn-D887C81F690B262BEC6254D97C4E6BA1.svg" alt="" width=""></div>
+<p>For the MSE case, that means minimizing:</p>
+<div><img class="blkeqn" src="images/blkeqn-AA997431220461FB569BAC914DB45F00.svg" alt="" width=""></div>
+<p>and for the MAE case, that means minimizing:</p>
+<div><img class="blkeqn" src="images/blkeqn-2A8360B217F7D27DC38AC0EB8E2E9B7C.svg" alt="" width=""></div>
+<p>The weights that minimize those equations are the mean and the median, respectively. (We prove this for the MSE case in <a href="descent.html#alg:general">General algorithm with regression tree weak models</a>.)</p>
+<p>To get a feel for the difference between MSE and MAE GBMs, let's revisit the <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> intermediate model predictions for the weak learners trained on both residual vectors and those trained on sign vectors.  We can empirically verify that training <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models on the residual vector drops the MSE loss dramatically faster than training <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> on the sign vector. Here is the data (stripped a decimals) pulled from the first article with the MSE and MAE tacked on:</p>
+<div><img class="blkeqn" src="images/latex-FE7C203506919B28959D6A9F92AA2F1A.svg" alt="
+{\small
+\setlength{\tabcolsep}{0.5em}
+\begin{tabular}[t]{rrrrrrr}
+\multicolumn{7}{c}{$\Delta_m$ {\bf trained on residual vector} $\vec y - \hat{\vec y}$}\\
+&$\vec x~~~$ & $\vec y~~~$ & \multicolumn{4}{c}{...$~\hat{\vec y}$~...}\vspace{-1mm}\\
+&{\bf SqFeet} & {\bf Rent} & $F_0(\vec x)$ & $F_1(\vec x)$ & $F_2(\vec x)$ & $F_3(\vec x)$\\
+\hline
+& 750 & 1160 & 1418 & 1272 & 1180 & 1195 \\
+& 800 & 1200 & 1418 & 1272 & 1180 & 1195 \\
+& 850 & 1280 & 1418 & 1272 & 1334 & 1349 \\
+& 900 & 1450 & 1418 & 1272 & 1334 & 1349 \\
+& 950 & 2000 & 1418 & 2000 & 2061 & 2000 \\
+\hline
+\vspace{-4mm}\\
+{\bf MSE}&\multicolumn{2}{l}{$\frac{1}{N}\sum_i^N(y_i-F_m(\vec x_i))^2$} & 94576 & 9895 & 4190 & 3240\\
+{\bf MAE}&\multicolumn{2}{l}{$\frac{1}{N}\sum_i^N|y_i-F_m(\vec x_i)|$} & 246 & 74 & 54 & 42
+\end{tabular}
+}
+" width=""></div>
+<p>and here is the data pulled from this article with the MSE and MAE tacked on:</p>
+<div><img class="blkeqn" src="images/latex-58407F5BFCD7DC8E319C21138920E3FA.svg" alt="
+{\small
+\setlength{\tabcolsep}{0.5em}
+\begin{tabular}[t]{rrrrrrr}
+\multicolumn{7}{c}{$\Delta_m$ {\bf trained on sign vector} $sign(\vec y - \hat{\vec y})$}\\
+&$\vec x~~~$ & $\vec y~~~$ & \multicolumn{4}{c}{...$~\hat{\vec y}$~...}\vspace{-1mm}\\
+& {\small\bf SqFeet} & {\bf Rent} & $F_0(\vec x)$ & $F_1(\vec x)$ & $F_2(\vec x)$ & $F_3(\vec x)$\\
+\hline
+& 750 & 1160 & 1280 & 1180 & 1160 & 1155 \\
+& 800 & 1200 & 1280 & 1180 & 1190 & 1185 \\
+& 850 & 1280 & 1280 & 1450 & 1460 & 1455 \\
+& 900 & 1450 & 1280 & 1450 & 1460 & 1455 \\
+& 950 & 2000 & 1280 & 1450 & 1460 & 2000 \\
+\hline
+\vspace{-4mm}\\
+{\bf MSE}&\multicolumn{2}{l}{$\frac{1}{N}\sum_i^N(y_i-F_m(\vec x_i))^2$} & 113620 & 66440 & 64840 & 6180\\
+{\bf MAE}&\multicolumn{2}{l}{$\frac{1}{N}\sum_i^N|y_i-F_m(\vec x_i)|$} & 218 & 152 & 148 & 40 \\
+\end{tabular}
+}
+" width=""></div>
+<p>There are a number of interesting things going on here. First, recall that we used the average for the <img style="vertical-align: -2.856pt;" src="images/eqn-78155D2EC4B025A5AC903D6F8611756C-depth002.72.svg"> model in the first article and the median in this article because the average minimizes the MSE and the median minimizes the MAE.  The data confirms this: The MSE from the MSE GBM <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> is smaller than for the MAE GBM <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> and that the MAE is higher in the MSE GBM data than the MAE GBM. Our choice of <img style="vertical-align: -2.856pt;" src="images/eqn-78155D2EC4B025A5AC903D6F8611756C-depth002.72.svg"> in each case was, therefore, a good one.</p>
+<p>Next, look at the trajectory of the MSE for both kinds of models. For <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> trained on residual vectors, the MSE immediately drops by 10x because the regression tree stump for <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> immediately takes off after the outlier at <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">=950. The residual computed from the average line to $2000 rent is so large that the regression tree stump splits the outlier into its own group. The difference between training on the residual vector versus sign vector is clear when we compare the <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> predictions of both composite models:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th align=center ><img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> trained on residual vector</th><th align=center ><img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> trained on sign vector</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center>
+
+<center>
+<img src="images/L2-delta1.png" width="70%">
+</center>
+
+</td><td align=center>
+
+<center>
+<img src="images/L1-delta1.png" width="70%">
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>(The region highlighted in orange is the group of observations associated with the right child of the <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> stump and the arrow points at the prediction for the right child.)</p>
+<p>The <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> trained on the sign vector splits the observations in between the second and third because the sign vector is <img style="vertical-align: -3.4125pt;" src="images/eqn-15BD7A89A48C1534704EE3363F0EB0B7-depth003.25.svg">. The regression tree chooses to group <img style="vertical-align: -3.4125pt;" src="images/eqn-B95B0B3BC23F39B3C04BC2BAF211BA5B-depth003.25.svg"> together because they are identical values, leaving <img style="vertical-align: -3.4125pt;" src="images/eqn-804D9B64B0EB771F3196B331A1391155-depth003.25.svg"> as the other group. Instead of the magnitude, the <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg"> trained on sign vectors treat anything above or equal to the median, <img style="vertical-align: -2.1944997pt;" src="images/eqn-F19B4656EC11CE4B8F1D59857C8291BF-depth002.09.svg">, as the same value. </p>
+<p>The MSE for weak models trained on the sign vector does not drop dramatically until <img style="vertical-align: -2.1944997pt;" src="images/eqn-20B2922F9886239EBD293C2C3AAF72AD-depth002.09.svg"> finally goes after the outlier to yield <img style="vertical-align: -2.1944997pt;" src="images/eqn-01951EC559CD6C4CDC5E189332A65175-depth002.09.svg">. In fact, the MSE does not budge in between the second and third weak models.  Empirically at least, training <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> on sign vectors does not seem to be optimizing the MSE very well whereas training <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> on residual vectors does optimize MSE well.</p>
+<p>Finally, let's make some observations about the intermediate <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg"> model predictions.  The units of each <img style="vertical-align: -2.7825pt;" src="images/eqn-7F9658A8611D26374A7798B5CAD44C84-depth002.65.svg"> element within a <img style="vertical-align: -2.4464998pt;" src="images/eqn-0035A6EE6D4B064DBC8E6EF7F2836B98-depth002.33.svg"> vector is rent-dollars, so each <img style="vertical-align: -2.4464998pt;" src="images/eqn-0035A6EE6D4B064DBC8E6EF7F2836B98-depth002.33.svg"> is a vector of dollar values in <span class=eqn>N</span>-space (here, <img style="vertical-align: -0.5pt;" src="images/eqn-A486B898EAE61C4D2EC0BC0C38F2FFA1-depth000.22.svg">). That means that the <span class=eqn>F<sub>m</sub></span> predictions are vectors sweeping through <span class=eqn>N</span>-space as we increase <span class=eqn>m</span>. When papers use the term &ldquo;<i>function space</i>,&rdquo; they just mean the <span class=eqn>N</span>-space of predictions: a vector of <span class=eqn>N</span> target values predicted by some <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg">.</p>
+
+
+<h2 id="alg:l1">GBM algorithm to minimize L1 loss</h2>
+
+<p>For completeness, here is the boosting algorithm, derived from <a href="https://statweb.stanford.edu/~jhf/ftp/trebst.pdf">Friedman's LAD_TreeBoost on page 7</a>, that optimizes the <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss function using regression tree stumps:</p>
+<div><img class="blkeqn" src="images/latex-99749CB3C601B0DD9BEE5A9E91049D4B.svg" alt="
+\setlength{\algomargin}{3pt}
+\SetAlCapSkip{-10pt}
+\begin{algorithm}[H]
+\LinesNumbered
+\SetAlgorithmName{Algorithm}{List of Algorithms}
+\SetAlgoSkip{}
+\SetInd{.5em}{.5em}
+\TitleOfAlgo{{\em l1boost}($X$,$\vec y$,$M$,$\eta$) {\bf returns} model $F_M$}
+Let $F_0(X) = median(\vec y)$\\
+\For{$m$ = 1 \KwTo $M$}{
+	Let $\vec r_{m-1} = \vec y - F_{m-1}(X)$ be the direction vector\\
+	Let ${\bf sign}_{m-1} = sign(\vec r_{m-1})$ be the sign vector\\
+	Train regression tree $\Delta_m$ on ${\bf sign}_{m-1}$, minimizing \underline{squared error}\\
+	\ForEach{leaf $l \in \Delta_m$}{
+		Alter $l$ to predict median (not mean) of $y_i - F_{m-1}(x_i)$ for obs. $i$ in $l$\\
+	}
+	$F_m(X) = F_{m-1}(X) + \eta \Delta_m(X)$\\
+}
+\Return{$F_M$}\\
+\end{algorithm}
+" width=""></div>
+<p>Note that it is not a typo that we train regression trees using the standard mechanism that minimizes the squared error when choosing splits.  The regression tree is trained on sign vectors, which is the key goal. We could probably alter the regression tree training to use absolute error, but this usually takes longer (at least in scikit's implementation) than training using squared error.</p>
+<p>Another detail to keep in mind is that while we train the regression tree on the sign vector, the algorithm alters the tree so that the leaves predict the median of the residuals, <img style="vertical-align: -3.4125pt;" src="images/eqn-DB25F5DA18D55677194040E7FDC7FBC4-depth003.25.svg">. The sign vector is used for grouping/splitting purposes in the tree, but the actual prediction is in fact a residual, just like it is for the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> algorithm.</p>
+
+
+
+</body>
+</html>

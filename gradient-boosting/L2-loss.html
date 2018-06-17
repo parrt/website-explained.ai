@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>Gradient boosting: Distance to target</title>
+</head>
+<body>
+<h1>Gradient boosting: Distance to target</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy
+	Howard</a></p>
+
+<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:2.1">An introduction to additive modeling</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.2">An introduction to boosted regression</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.3">The intuition behind gradient boosting</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.4">Gradient boosting regression by example</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.5">Measuring model performance</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.6">Choosing hyper-parameters</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#alg:l2">GBM algorithm to minimize L2 loss</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<h2 id="sec:2.1">An introduction to additive modeling</h2>
+
+<p>Before we get into boosting, let's look at an example of what mathematicians call <i>additive modeling</i> because it is the foundation of boosting. The idea is quite simple: we are going to add a bunch of simple terms together to create a more complicated expression. In the machine learning world, that expression (function) represents a model mapping some observation's feature, <span class=eqn>x</span>, to a scalar target value, <span class=eqn>y</span>. It's a useful technique because we can often conjure up the simple terms more easily than cracking the overall function in one go.  Consider the following curve that shows <span class=eqn>y</span> as some unknown but nontrivial function of <span class=eqn>x</span>.</p>
+<img src="images/L2-loss/L2-loss_additive_2.svg"
+  width="30%%"
+>
+<p>Let's assume that the function is composed of several simple terms and try to guess what they are.  After adding each term, we can reassess the situation to help us figure out the next term to add by considering the difference between the current combined function and the desired target function.</p>
+<p>Our first approximation might be the horizontal line <span class=eqn>y</span>=30 because we can see that the <span class=eqn>y</span>-intercept (at <span class=eqn>x</span>=0) is 30. Check out the first plot in the following graph sequence. Naturally, the slope is wrong so we should add in the 45 degree line <img style="vertical-align: -2.7825pt;" src="images/eqn-5DBAD057040EC6EB5AA5841786E25D33-depth002.65.svg"> (with slope 60/60=1) that runs through the squiggly target function, which gives us the second graph.  It turns out that the squiggly bit comes from our friend the sine function so we can add that term, which leads us to the final plot matching our target function:</p>
+<img src="images/L2-loss/L2-loss_additive_3.svg"
+  width="90%%"
+>
+<p>Decomposing a complicated function into simpler subfunctions is nothing more than the divide and conquer strategy that we programmers use all the time. In this case, we are dividing a potentially very complicated function into smaller, more manageable bits.  For example, let's call our target function <img style="vertical-align: -3.4125pt;" src="images/eqn-D76F2C4D6BDF142AF5106C3F36E9E970-depth003.25.svg"> then we have <img style="vertical-align: -3.4125pt;" src="images/eqn-A60CDA9327DACD51BAA551321AE0EFC1-depth003.25.svg"> and can abstract away the individual terms, also as functions, giving us the addition of three subfunctions:</p>
+<div><img class="blkeqn" src="images/blkeqn-E8882C995664C20297AB7E6E732A829B.svg" alt="" width=""></div>
+<p>where:</p>
+<div><img class="blkeqn" src="images/latex-4E564ACA7FA8DF184F60FC4DC7434374.svg" alt="
+\begin{eqnarray*}
+f_1(x) &=& 30\\
+f_2(x) &=& x\\
+f_3(x) &=& sin(x)\\
+\end{eqnarray*}
+" width=""></div>
+<p>More generally, mathematicians describe the decomposition of a function into the addition of <span class=eqn>M</span> subfunctions like this:</p>
+<div><img class="blkeqn" src="images/blkeqn-5E6B0312A16B036470106C67FDF9DA12.svg" alt="" width=""></div>
+<p>The sigma <img style="vertical-align: -2.4359999pt;" src="images/eqn-7231FA806691800F095133F6FB720D82-depth002.32.svg"> notation is a <span class=inlinecode>for</span>-loop that iterates <span class=eqn>m</span> from 1 to <span class=eqn>M</span>, accumulating the sum of the subfunction, <span class=eqn>f<sub>m</sub></span>, results.</p>
+<p>In the machine learning world, we're given a set of <img style="vertical-align: -3.4125pt;" src="images/eqn-90CBC22EDF225ADF8A68974F51227F05-depth003.25.svg"> data points rather than a continuous function, as we have here.  The goal is to create a function that draws a nice curve through the data points. We call that function a <i>model</i> and it maps <span class=eqn>x</span> to <span class=eqn>y</span>, thus, making predictions given some unknown <span class=eqn>x</span>.   Adding up a bunch of subfunctions to create a composite function that models some data points is then called <i>additive modeling</i>. Gradient boosting machines use additive modeling to gradually nudge an approximate model towards a really good model, by adding simple submodels to a composite model.</p>
+
+
+<h2 id="sec:2.2">An introduction to boosted regression</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Boosting_\(meta-algorithm)">Boosting</a> is a loosely-defined strategy that combines multiple simple models into a single composite model. The idea is that, as we introduce more simple models, the overall model becomes a stronger and stronger predictor. In boosting terminology, the simple models are called <i>weak models</i> or <i>weak learners</i>.</p>
+<p>In the context of regression, we make numerical predictions, such as rent prices, based upon information, such as square footage, about an entity (an <i>observation</i>).  To keep things simple in this article, we'll work with a single feature per entity but, in general, each observation has a vector of features; let's call it <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">. Given <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, we'd like to learn scalar target value <span class=eqn>y</span> for a bunch of <img style="vertical-align: -3.4125pt;" src="images/eqn-ABE33A15829642AB2C82FDF967040044-depth003.25.svg"> pairs.  Training a regression model is a matter of fitting a function through the data points <img style="vertical-align: -3.4125pt;" src="images/eqn-ABE33A15829642AB2C82FDF967040044-depth003.25.svg"> as best we can.  Given a single feature vector <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> and scalar target value <span class=eqn>y</span> for a single observation, we can express a  composite model that predicts (approximates) <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> as the addition of <span class=eqn>M</span> weak models <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg">:</p>
+<div><img class="blkeqn" src="images/blkeqn-900440864725A853479705AC1E98D296.svg" alt="" width=""></div>
+<p>Mathematicians represent both the weak and composite models as functions, but in practice the models can be anything including k-nearest-neighbors or regression trees.  Since everyone uses trees for boosting, we'll focus on implementations that use regression trees for weak models, which also happens to greatly simplify the mathematics.   Later, we'll stack <span class=eqn>N</span> feature vectors as rows in a matrix, <img style="vertical-align: -3.4125pt;" src="images/eqn-6B3AF986C87C90D46CAD5E058756B0D3-depth003.25.svg">, and <span class=eqn>N</span> targets into a vector, <img style="vertical-align: -3.4125pt;" src="images/eqn-FF4DB78E49775D36A914C182F1D9E1FB-depth003.25.svg"> for <span class=eqn>N</span> observations.</p>
+<p>It's often the case that an additive model can build the individual <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg"> terms independently and in parallel, but that's not the case for boosting. Boosting constructs and adds weak models in a stage-wise fashion, one after the other, each one chosen to improve the overall model performance. The boosting strategy is greedy in the sense that choosing <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg"> never alters previous functions. We could choose to stop adding weak models when <img style="vertical-align: -3.4125pt;" src="images/eqn-4F520F6482D0DB58E02BFBBED21650D9-depth003.25.svg">'s performance is good enough or when <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg"> doesn't add anything.   In practice, we choose the number of stages, <span class=eqn>M</span>, as a hyper-parameter of the overall model. Allowing <span class=eqn>M</span> to grow arbitrarily increases the risk of overfitting.</p>
+<p>Because greedy strategies choose one weak model at a time, you will often see boosting models expressed using this equivalent, recursive formulation:</p>
+<div><img class="blkeqn" src="images/blkeqn-9B4B005D892873A83D708EA4B669716A.svg" alt="" width=""></div>
+<p>That says we should tweak the previous model with <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg"> to get the next model. </p>
+<p>Boosting itself does not specify how to choose the weak learners.  Boosting does not even specify the form of the <img style="vertical-align: -3.4125pt;" src="images/eqn-1EF4F341B36A65BE07AF988D08341CC0-depth003.25.svg"> models, but the form of the weak model dictates the form of the meta-model. For example, if all weak models are linear models, then the resulting meta-model is a simple linear model. If we use tiny regression trees as the weak models, the result is a forest of trees whose predictions are added together.</p>
+<p>Let's see if we can design a strategy for picking weak models to create our own boosting algorithm for a single observation. Then, we can extend it to work on the multiple observations we'd encounter in practice.</p>
+
+
+<h2 id="sec:2.3">The intuition behind gradient boosting</h2>
+
+<p>To construct a boosted regression model, let's start by creating a crappy model, <img style="vertical-align: -3.4125pt;" src="images/eqn-9FBF79C617E7686767B545E2AA28A397-depth003.25.svg">, that predicts an initial approximation of <span class=eqn>y</span> given feature vector <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">. Then, let's gradually nudge the overall <img style="vertical-align: -3.4125pt;" src="images/eqn-2FAD4E64F2A57ED16C39CE8A079469D7-depth003.25.svg"> model towards the known target value <span class=eqn>y</span> by adding one or more tweaks, <img style="vertical-align: -3.4125pt;" src="images/eqn-D53E98B3536EB2216B38E3EE4FC0FDBF-depth003.25.svg">:</p>
+<div><img class="blkeqn" src="images/latex-C038479244EA27FF65B7DD5CD6F6574A.svg" alt="
+\begin{eqnarray*}
+\hat y & = & f_0(\vec x) + \Delta_1(\vec x) + \Delta_2(\vec x) + ...  +  \Delta_M(\vec x) \\
+ & = & f_0(\vec x) + \sum_{m=1}^M  \Delta_m(\vec x)\\
+ & = & F_M(\vec x)\\
+\end{eqnarray*}
+" width=""></div>
+<p>Or, using a recurrence relation, let:</p>
+<div><img class="blkeqn" src="images/latex-6E99DC1985D974714E94D70CDE598C18.svg" alt="
+\begin{eqnarray*}
+F_0(\vec x) &=& f_0(\vec x)\\
+F_m(\vec x) &=& F_{m-1}(\vec x) + \Delta_m(\vec x)\\
+\end{eqnarray*}
+" width=""></div>
+<p>It might be helpful to think of this boosting approach as a golfer initially whacking a golf ball towards the hole at <span class=eqn>y</span> but only getting as far as <img style="vertical-align: -3.4125pt;" src="images/eqn-9FBF79C617E7686767B545E2AA28A397-depth003.25.svg">. The golfer then repeatedly taps the ball more softly, working the ball towards the hole, after reassessing direction and distance to the hole at each stage. The following diagram illustrates 5 strokes getting to  the hole, <span class=eqn>y</span>, including two strokes, <img style="vertical-align: -2.0475pt;" src="images/eqn-E3C52053F79E4D809D3F871C8874EB38-depth001.95.svg"> and <img style="vertical-align: -2.1944997pt;" src="images/eqn-20B2922F9886239EBD293C2C3AAF72AD-depth002.09.svg">, that overshoot the hole. (Golfer clipart from <span class=inlinecode>http://etc.usf.edu/clipart/</span>)</p>
+<p><img src="images/golf-dir-vector.png" width="70%"></p>
+<p>After the initial stroke, the golfer determines the appropriate nudge by computing the  difference between <span class=eqn>y</span> and the first approximation, <img style="vertical-align: -3.4125pt;" src="images/eqn-91F9E06E9135A1FBC73B82920ABD7AFE-depth003.25.svg">. (We can let <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> be the hole number 1-18, but it doesn't really matter since we're only working with one observation for illustration purposes.) This difference is usually called the <i>residual</i> or <i>residual vector</i>, but it's helpful for gradient boosting to think of this as the vector pointing from the current prediction, <img style="vertical-align: -3.4125pt;" src="images/eqn-5CDC0DDCEF57A79FA72E96947D687EBF-depth003.25.svg">,  to the true <span class=eqn>y</span>.  (In the <a href="L1-loss.html">second article</a>, we will look at just the sign of the direction, not magnitude; we'll call that the <i>sign vector</i> to distinguish from the residual vector.) Using the residual vector as our nudge, means training <img style="vertical-align: -3.4125pt;" src="images/eqn-DEC6D86054412A5F2BC71542941B4590-depth003.25.svg"> on value <img style="vertical-align: -3.4125pt;" src="images/eqn-C7327AE12977F8E4D9483491A37A5630-depth003.25.svg"> for our base weak models.  As with any machine learning model, our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> models will not have perfect recall and precision, so we should expect <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> to give a noisy prediction instead of exactly <img style="vertical-align: -3.4125pt;" src="images/eqn-C7327AE12977F8E4D9483491A37A5630-depth003.25.svg">. </p>
+<p>As an example, let's say that the hole is at <span class=eqn>y</span>=100 yards, <img style="vertical-align: -3.4125pt;" src="images/eqn-2BC1D879AC7E876955694F927153A75C-depth003.25.svg">. Manually boosting, we might see a sequence like the following, depending on the imprecise <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> strokes made by the golfer:</p>
+<div><img class="blkeqn" src="images/latex-0936C06C9B1327717E490FE17E434573.svg" alt="
+{\small
+\begin{tabular}[t]{lllll}
+{\bf Stage} &{\bf Boosted}&{\bf Model}&{\bf Train} $\Delta_m$&{\bf Noisy}\vspace{-1mm}\\
+$m$& {\bf Model} & {\bf Output} $\hat y$ & {\bf on} $y - F_{m-1}$ & {\bf Prediction} $\Delta_m$\\
+\hline
+0 & $F_0$ & 70 \\
+1 & $F_1 = F_0 + \Delta_1$ & 70+15=85 & 100-70=30 & $\Delta_1$ = 15\\
+2 & $F_2 = F_1 + \Delta_2$ & 85+20=105 & 100-85=15 & $\Delta_2$ = 20 \\
+3 & $F_3 = F_2 + \Delta_3$ & 105-10=95 & 100-105={\bf -5} & $\Delta_3$ = {\bf -10} \\
+4 & $F_4 = F_3 + \Delta_4$ & 95+5=100 & 100-95=5 & $\Delta_4$ = 5 \\
+\end{tabular}
+}
+" width=""></div>
+<p>A GBM implementation would also support a so-called learning rate, <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg">, that speeds up or slows down the overall approach of <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> to <span class=eqn>y</span>, which helps to reduce the likelihood of overfitting.</p>
+<p>To show how flexible this technique is, consider training the weak models on just the direction of <span class=eqn>y</span>, rather than the magnitude and direction of <span class=eqn>y</span>. In other words, we would train the <img style="vertical-align: -3.4125pt;" src="images/eqn-DEC6D86054412A5F2BC71542941B4590-depth003.25.svg"> on <img style="vertical-align: -3.4125pt;" src="images/eqn-AABBDF3B4F9D5C667189CDBED58D1779-depth003.25.svg">, not <img style="vertical-align: -3.4125pt;" src="images/eqn-C7327AE12977F8E4D9483491A37A5630-depth003.25.svg">. The <img style="vertical-align: -3.4125pt;" src="images/eqn-705E9BF9FBD83E453D86EBFE52B7BC0B-depth003.25.svg"> (or <img style="vertical-align: -3.4125pt;" src="images/eqn-786CD6E1A491A2211AE152E7FAF9EB55-depth003.25.svg">) function expresses the direction as one of <img style="vertical-align: -3.4125pt;" src="images/eqn-D3E1C91B9828A2ED3CB028212B1F30CB-depth003.25.svg">, but both <img style="vertical-align: -3.4125pt;" src="images/eqn-65A3BBFE9C11C92D05EB0D94822B84F2-depth003.25.svg"> and <img style="vertical-align: -2.7825pt;" src="images/eqn-295047303CBBAF12088863BE5CCFFBFE-depth002.65.svg"> point us in suitable directions.  We'll see in <a href="descent.html">Gradient boosting performs gradient descent</a> that training on the residual vector optimizes the overall model for the squared error loss function and training on the sign vector optimizes the absolute error loss function.</p>
+<p>If you understand this golfer example, then you understand the key intuition behind boosting for regression, at least for a single observation.  Yup, that's it, but there are several things to reinforce before moving on:</p>
+<ul>
+<li>The weak models learn direction <b>vectors</b> with direction information, not just magnitudes.</li>
+<li>The initial model <img style="vertical-align: -3.4125pt;" src="images/eqn-9FBF79C617E7686767B545E2AA28A397-depth003.25.svg"> is trying to learn target <span class=eqn>y</span> given <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, but the <img style="vertical-align: -3.4125pt;" src="images/eqn-DEC6D86054412A5F2BC71542941B4590-depth003.25.svg"> tweaks are trying to learn direction vectors given <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">.</li>
+<li>All weak models, <img style="vertical-align: -3.4125pt;" src="images/eqn-9FBF79C617E7686767B545E2AA28A397-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-D53E98B3536EB2216B38E3EE4FC0FDBF-depth003.25.svg">, train on direction vectors that are some function of the original feature vectors, <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">.</li>
+<li>Two common direction vector choices are the residual, <img style="vertical-align: -3.4125pt;" src="images/eqn-DDB6CD04942456CBF2CC3E2EE4212508-depth003.25.svg">, and the sign, <img style="vertical-align: -3.4125pt;" src="images/eqn-340FB7BB80C89C4740AA75F1448E1D13-depth003.25.svg">.</li>
+</ul>
+<p>Let's walk through a concrete example to see what gradient boosting looks like on more than one observation.</p>
+
+
+<h2 id="sec:2.4">Gradient boosting regression by example</h2>
+
+<p>Imagine that we have square footage data on five apartments and their rent prices in dollars per month as our training data:</p>
+<div class="scrollbar_wrapper">
+<table class="dataframe">
+<thead>
+	<tr><th>sqfeet</th><th>rent</th></tr>
+</thead>
+<tbody>
+	<tr>
+	<td>750</td><td>1160</td>
+	</tr>
+	<tr>
+	<td>800</td><td>1200</td>
+	</tr>
+	<tr>
+	<td>850</td><td>1280</td>
+	</tr>
+	<tr>
+	<td>900</td><td>1450</td>
+	</tr>
+	<tr>
+	<td>950</td><td>2000</td>
+	</tr>
+</tbody>
+</table>
+</div>
+<p>where row <span class=eqn>i</span> is an observation with one-dimensional feature vector <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg"> (bold <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">) and target scalar value <span class=eqn>y<sub>i</sub></span>. Matrix <img style="vertical-align: -3.4125pt;" src="images/eqn-DD189A760FC4CE2BCCAAE168D7F7B380-depth003.25.svg"> holds all  feature vectors and <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> (bold <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">) is the entire <span class=inlinecode>rent</span> vector <img style="vertical-align: -3.4125pt;" src="images/eqn-1F70A466D057AC503E27D1284F2EFE31-depth003.25.svg">. <img style="vertical-align: -3.4125pt;" src="images/eqn-C41C382215EC27DE6F8526D54CA8F61F-depth003.25.svg"> yields a predicted value but <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> yields a predicted target vector, one value for each <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg">.</p>
+<p>From this data, we'd like to build a GBM to predict rent price given square footage. To move towards <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> from any <img style="vertical-align: -2.4464998pt;" src="images/eqn-E4731664F6B8C24ED4D2AD5F88B563E2-depth002.33.svg">, we need a direction vector. Let's start with <img style="vertical-align: -2.4464998pt;" src="images/eqn-75FDE87DE5727E3AFE37D4A7867D5601-depth002.33.svg"> and then, in <a href="L1-loss.html">Heading in the right direction</a>, we'll see how GBM works for <img style="vertical-align: -3.4125pt;" src="images/eqn-8D11D9675633426357DF4549B33D4BF6-depth003.25.svg">.</p>
+<p>Let's use the mean (average) of the rent prices as our initial model: <img style="vertical-align: -3.4125pt;" src="images/eqn-6F5EE6458C42578481ABD4C423C53739-depth003.25.svg"> = <img style="vertical-align: -3.4125pt;" src="images/eqn-0C142C5B4909CC2C3AC710D68AEB25B4-depth003.25.svg"> = 1200 for all <span class=eqn>i</span>: <img style="vertical-align: -3.4125pt;" src="images/eqn-4FE335B6DD3905F05A6EE1D571A921B6-depth003.25.svg">. We use the mean because that is the single value that minimizes the mean squared error between it and the <span class=eqn>y<sub>i</sub></span> values. (We'll seen shortly that GBMs whose weak models are trained on residual vectors optimize the mean squared error.) Once we have <img style="vertical-align: -2.1944997pt;" src="images/eqn-F19B4656EC11CE4B8F1D59857C8291BF-depth002.09.svg">, we compute <img style="vertical-align: -2.4464998pt;" src="images/eqn-934221B59637DE453B8E5620C8D24B34-depth002.33.svg">, the residual between the target and the previous estimate:</p>
+<div><img class="blkeqn" src="images/latex-178119A7EC2BBFDBFBF57B40CD3589B6.svg" alt="
+{\small
+\begin{tabular}[t]{rrrr}
+{\bf sqfeet} & {\bf rent} & $F_0$ & $\vec y-F_0$ \\
+\hline
+750 & 1160 & 1418 & -258 \\
+800 & 1200 & 1418 & -218 \\
+850 & 1280 & 1418 & -138 \\
+900 & 1450 & 1418 & 32 \\
+950 & 2000 & 1418 & 582 \\
+\end{tabular}
+}
+" width=""></div>
+<p>(Many articles and <a href="https://statweb.stanford.edu/~jhf/ftp/trebst.pdf">Friedman's original paper</a> call the <img style="vertical-align: -2.4464998pt;" src="images/eqn-09616A2B1AFA6AEB17F18BF054A1CD0A-depth002.33.svg"> values <i>pseudo-responses</i> and use notation <img style="vertical-align: -2.4464998pt;" src="images/eqn-A0D17D79426DD74BB3A32C5BD4143AFE-depth002.33.svg">.)</p>
+<p>The last column shows not only the direction but the magnitude of the difference between where we are, <img style="vertical-align: -3.4125pt;" src="images/eqn-F7C0F080A7919AE049369899B1FA0332-depth003.25.svg">, and where we want to go, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. The red vectors in the following diagram are a visualization of the residual vectors from our initial model to the rent target values.</p>
+<img src="images/L2-loss/L2-loss_examples_3.svg"
+  width="35%%"
+>
+<p>Next, we train a weak model, <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg">, to predict that  residual vector given <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg"> for all <span class=eqn>i</span> observations. A perfect model, <img style="vertical-align: -2.0475pt;" src="images/eqn-3B77C65725F2EA6D76956B3EF3A8D6E0-depth001.95.svg">, would yield exactly <img style="vertical-align: -3.4125pt;" src="images/eqn-0224E946B4F2DF1D7C43645E47127415-depth003.25.svg">, meaning that we'd be done after one step since <img style="vertical-align: -3.4125pt;" src="images/eqn-279BE61881B256A950098397B866E52E-depth003.25.svg"> would be <img style="vertical-align: -3.4125pt;" src="images/eqn-7D8A2F9B45C613498B031959FEFD5C89-depth003.25.svg">, or just <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. Because it imperfectly captures that difference, <img style="vertical-align: -3.4125pt;" src="images/eqn-279BE61881B256A950098397B866E52E-depth003.25.svg"> is still not quite <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">, so we need to keep going for a few stages. Let's add learning rate, <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg">, to our recurrence relation:</p>
+<div><img class="blkeqn" src="images/blkeqn-F8B8ACA2375FC1021747C3C52DE4E531.svg" alt="" width=""></div>
+<p>We'll discuss the learning rate below, but for now, please assume that our learning rate is <img style="vertical-align: -2.7825pt;" src="images/eqn-8B7BAB300747A96E1073765DC911E592-depth002.65.svg">, so <img style="vertical-align: -2.1944997pt;" src="images/eqn-609A637E459E3C78F1F7E07AE045EBCA-depth002.09.svg">, <img style="vertical-align: -2.0475pt;" src="images/eqn-92F17077C63A9355145C6FC0B6F022D0-depth001.95.svg">, and so on. The following table summarizes the intermediate values of the various key &ldquo;players&rdquo;:</p>
+<div><img class="blkeqn" src="images/latex-6512520CF6C6FA41A4DEEC94A07670AD.svg" alt="
+{\small
+\begin{tabular}[t]{rrrrrrrr}
+$\Delta_1$ & $F_1$ & $\vec y$-$F_1$ & $\Delta_2$ & $F_2$ & $\vec y$ - $F_2$ & $\Delta_3$ & $F_3$\\
+\hline
+-145.5 & 1272.5 & -112.5 & -92.5 & 1180 & -20 & 15.4 & 1195.4 \\
+-145.5 & 1272.5 & -72.5 & -92.5 & 1180 & 20 & 15.4 & 1195.4 \\
+-145.5 & 1272.5 & 7.5 & 61.7 & 1334.2 & -54.2 & 15.4 & 1349.6 \\
+-145.5 & 1272.5 & 177.5 & 61.7 & 1334.2 & 115.8 & 15.4 & 1349.6 \\
+582 & 2000 & 0 & 61.7 & 2061.7 & -61.7 & -61.7 & 2000 \\
+\end{tabular}
+}
+" width=""></div>
+<p>It helps to keep in mind that we are always training on the residual vector <img style="vertical-align: -2.8455pt;" src="images/eqn-512E64FCB327A35ACC6B49E4D75B67FA-depth002.71.svg"> but get imperfect model <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">. The best way to visualize the learning of <img style="vertical-align: -2.8455pt;" src="images/eqn-13E997309F2D99356D19159638397FE1-depth002.71.svg"> residual vectors by weak models, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, is by looking at the residual vectors and model predictions horizontally on the same scale Y-axis:</p>
+<img src="images/L2-loss/L2-loss_examples_4.svg"
+  width="90%%"
+>
+<p>The blue dots are the residual vector elements used to train <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models, the dashed lines are the predictions made by <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, and the dotted line is the origin at 0.  Notice how the residual vector elements (blue dots) get smaller as we add more weak models.</p>
+<p>The predictions are step functions because we've used a <i>regression tree stump</i> as our base weak model with split points 925, 825, and 925. Here are the three stumps implementing our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models:</p>
+<p><img src="images/stubs-mse.svg" width="90%"></p>
+<div class=aside><b>Regression tree stumps</b><br>
+A regression tree stump is a regression tree with a single root and two children that splits on a single (feature) variable, which is what we have here, at a single threshold. (If we had more than a single value in our feature vectors, we'd have to build a taller tree that tested more variables; to avoid overfitting, we don't want very tall trees, however.) If a test feature value is less than the threshold, the model yields the average of the training target samples in the left leaf. If the test feature value is greater than or equal to the threshold, the model yields the average of the training target examples in the right leaf. 
+<p>The feature value split location is chosen to minimize the variance of the target elements in each group. For example, imagine single-valued features for 5 observations <img style="vertical-align: -3.4125pt;" src="images/eqn-D27BB07AF9E2531A3ECAD2186047AFFE-depth003.25.svg"> and target values <img style="vertical-align: -3.4125pt;" src="images/eqn-EF4E7460825A565F900C997FCC02F80C-depth003.25.svg">. A good place to split the feature values is between 1 and 4. That means separating target values in the two leaves into very similar groups: <img style="vertical-align: -3.4125pt;" src="images/eqn-32180B6A57AD16A75D04E7B345E9AABE-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-EBD8B72A5E9D22E1E87D7C28E622FF86-depth003.25.svg">.</p>
+
+</div>
+<p>The composite model sums together all of the weak models so let's visualize the sum of the weak models:</p>
+<img src="images/L2-loss/L2-loss_examples_5.svg"
+  width="30%%"
+>
+<p>If we add all of those weak models to the initial <img style="vertical-align: -2.856pt;" src="images/eqn-78155D2EC4B025A5AC903D6F8611756C-depth002.72.svg"> average model, we see that the full composite model is a very good predictor of the actual rent values:</p>
+<img src="images/L2-loss/L2-loss_examples_6.svg"
+  width="90%%"
+>
+<p>It's worth pointing out something subtle with the learning rate and the notation used in the graphs: <img style="vertical-align: -3.4125pt;" src="images/eqn-B9DC6699A17434228D986B801A9BC39C-depth003.25.svg">. That makes it look like the learning rate could be applied all the way at the end as a global learning rate. Mathematically, the formula is correct but it hides the fact that each weak model, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, is trained on <img style="vertical-align: -3.4125pt;" src="images/eqn-DB25F5DA18D55677194040E7FDC7FBC4-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg"> is a function of the learning rate: <img style="vertical-align: -3.4125pt;" src="images/eqn-7081F436817AB1C12F9ABAD08990F8EE-depth003.25.svg">. Friedman calls this <i>incremental shrinkage</i>.</p>
+
+
+<h2 id="sec:2.5">Measuring model performance</h2>
+
+<p>How good is our model? To answer that, we need a loss or cost function, <img style="vertical-align: -3.4125pt;" src="images/eqn-26176BB2C643494DB6CC1AB773A42BF8-depth003.25.svg"> or <img style="vertical-align: -3.4125pt;" src="images/eqn-027FC40D57190EDABDC759BA63B8BE55-depth003.25.svg">, that computes the cost of predicting <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> instead of <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">.   The loss across all <span class=eqn>N</span>  observations is just the average (or the sum if you want since <span class=eqn>N</span> is a constant once we start training) of all the individual observation losses:</p>
+<div><img class="blkeqn" src="images/blkeqn-09D2862BB95E2122B7443FC7F01DF516.svg" alt="" width=""></div>
+<p>The mean squared error (MSE) is the most common, and what we are optimizing in this article:</p>
+<div><img class="blkeqn" src="images/blkeqn-D513C80FB4F1E7F02D3F6E03AB110A78.svg" alt="" width=""></div>
+<p>In the final article, <a href="descent.html">Gradient boosting performs gradient descent</a> we show that training our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> on the residual vector leads to a minimization of the mean squared error loss function.</p>
+
+
+<h2 id="sec:2.6">Choosing hyper-parameters</h2>
+
+<p>We've discussed two GBM hyper-parameters in this article, the number of stages <span class=eqn>M</span> and the learning rate <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg">.  Both affect model accuracy.  The more stages we use, the more accurate the model, but the more likely we are to be overfitting. The primary value of the learning rate, or &ldquo;<i>shrinkage</i>&rdquo; as some papers call it, is to reduce overfitting of the overall model. As Chen and Guestrin say in <a href="https://arxiv.org/pdf/1603.02754.pdf">XGBoost: A Scalable Tree Boosting System</a>, &ldquo;<i>shrinkage reduces the influence of each individual tree and leaves space for future trees to improve the model.</i>&rdquo; Friedman recommends a low learning rate like 0.1 and a larger number of stages. In practice, people do a grid search over the hyper-parameter space looking for the best model performance. (Grid search can be very expensive given all of the model construction involved.) For example, see the article by Aarshay Jain: <a href="https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/">Complete Guide to Parameter Tuning in XGBoost</a> or the article by Jason Brownlee called <a href="https://machinelearningmastery.com/tune-learning-rate-for-gradient-boosting-with-xgboost-in-python">Tune Learning Rate for Gradient Boosting with XGBoost in Python</a>. </p>
+<p>The following graph shows how the mean squared error changes as we add more weak models, illustrated with a few different learning rates.  </p>
+<img src="images/L2-loss/L2-loss_examples_8.svg"
+  width="45%%"
+>
+<p>A value of <img style="vertical-align: -2.7825pt;" src="images/eqn-33E30B16619C9CE8D6F457C75810608F-depth002.65.svg"> looks like it reaches the minimum error at the last stage, <img style="vertical-align: -0.5pt;" src="images/eqn-FA877101584A13872A537A02E7081751-depth000.20.svg">, so that might be a good starting point for the learning rate.</p>
+<p>We stopped at <img style="vertical-align: -0.5pt;" src="images/eqn-FA877101584A13872A537A02E7081751-depth000.20.svg"> for purposes of a simple explanation of how boosting works.  As we said, practitioners often use a grid search to optimize hyper-parameters, such as <span class=eqn>M</span>, but one could also keep adding stages until performance stops improving.  The risk in that case would be overfitting the model.</p>
+<p>As a side note, the idea of using a learning rate to reduce overfitting in models that optimize cost functions to learn, such as deep learning neural networks, is very common. Rather than using a constant learning rate, though, we could start the learning rate out energetically and gradually slow it down as the model approached optimality; this proves very effective in practice.</p>
+<p>Ok, let's tie all of this together.  A gradient boosting regression model, <img style="vertical-align: -3.4125pt;" src="images/eqn-EF285D267C9CD3C9A9FBEE626800568A-depth003.25.svg">, adds together an initial weak model, <img style="vertical-align: -3.4125pt;" src="images/eqn-180EACFD76DFF79637353384716FDA65-depth003.25.svg">, that predicts the average <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> value, and the predictions of <span class=eqn>M</span> weak models, <img style="vertical-align: -3.4125pt;" src="images/eqn-6122F1CE8F85F2DAA8A18D8EDED9EF76-depth003.25.svg">, that nudge <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> towards <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. Each <img style="vertical-align: -3.4125pt;" src="images/eqn-6122F1CE8F85F2DAA8A18D8EDED9EF76-depth003.25.svg"> is trained on a residual vector that measures the direction and magnitude of the true target <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> from the previous model, <img style="vertical-align: -3.4125pt;" src="images/eqn-DB25F5DA18D55677194040E7FDC7FBC4-depth003.25.svg">. The new prediction <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> is the addition of the previous model and a nudge, <img style="vertical-align: -3.4125pt;" src="images/eqn-6122F1CE8F85F2DAA8A18D8EDED9EF76-depth003.25.svg">, multiplied by a learning rate: <img style="vertical-align: -3.4125pt;" src="images/eqn-F8B8ACA2375FC1021747C3C52DE4E531-depth003.25.svg">.  Hyper-parameters <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg"> and <span class=eqn>M</span> are determined by grid search.</p>
+<p><img src="images/congrats.png" width="15%"> If you more-or-less followed this discussion, then congratulations! You understand the key elements of gradient boosting for regression. That's all there is to it. Really. As we'll see in the next article, <a href="L1-loss.html">Gradient boosting: Heading in the right direction</a>, we can use a different direction vector than the residual, but the basic mechanism is the same. Using the sign of the residual rather than the residual vector itself, will have the effect of minimizing a different loss function than mean squared error (it'll minimize mean absolute value). </p>
+<p>You might've heard that gradient boosting is very complex mathematically, but that's only if we care about generalizing gradient boosting to work with any loss function (with associated direction vector), rather than the two we discuss in the first two articles of this series (residual and sign vectors). If you want to get funky with the math and see the cool relationship of gradient boosting with gradient descent, check out our last article in the series, <a href="descent.html">Gradient boosting performs gradient descent</a>.  Also check out the next article, <a href="L1-loss.html">Gradient boosting: Heading in the right direction</a> that goes through this example again but this time training weak models on the sign of the residual not the residual vector.</p>
+
+
+<h2 id="alg:l2">GBM algorithm to minimize L2 loss</h2>
+
+<p>For completeness, here is the boosting algorithm, adapted from <a href="https://statweb.stanford.edu/~jhf/ftp/trebst.pdf">Friedman's  LS_Boost and LAD_TreeBoost</a>, that optimizes the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss function using regression tree stumps:</p>
+<div><img class="blkeqn" src="images/latex-321A7951E78381FB73D2A6874916134D.svg" alt="
+\setlength{\algomargin}{3pt}
+\SetAlCapSkip{-10pt}
+\begin{algorithm}[H]
+\LinesNumbered
+\SetAlgorithmName{Algorithm}{List of Algorithms}
+\SetAlgoSkip{}
+\SetInd{.5em}{.5em}
+\TitleOfAlgo{{\em l2boost}($X$,$\vec y$,$M$,$\eta$) {\bf returns} model $F_M$}
+Let $F_0(X) = \frac{1}{N}\sum_{i=1}^N y_i$, mean of target $\vec y$ across all observations\\
+\For{$m$ = 1 \KwTo $M$}{
+	Let $\vec r_{m-1} = \vec y - F_{m-1}(X)$ be the residual direction vector\\
+	Train regression tree $\Delta_m$ on $\vec r_{m-1}$, minimizing squared error\\
+	$F_m(X) = F_{m-1}(X) + \eta \Delta_m(X)$\\
+}
+\Return{$F_M$}\\
+\end{algorithm}
+" width=""></div>
+
+
+
+</body>
+</html>

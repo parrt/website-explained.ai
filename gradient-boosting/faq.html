@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>Gradient boosting: frequently asked questions</title>
+</head>
+<body>
+<h1>Gradient boosting: frequently asked questions</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy Howard</a></p>
+
+<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:4.1">Who invented gradient boosting machines?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.2">What's the basic idea behind gradient boosting?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.3">Where does the gradient appear in gradient boosting?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.4">What is the difference between gradient boosting optimizing squared error versus absolute error?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.5">What is function space?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.6">How is gradient boosting performing gradient descent in function space?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.7">We train weak models on residuals, y-y_hat, so why don't we need y when using the model on an unknown feature vector?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.8">How is gradient boosting different from our typical usage of gradient descent?</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.9">Can you point me at a learning resource for gradients and matrix calculus?</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+<p>We tried to collect a number of common questions on this page. Please note that we focus on gradient boosting for regression not classification.  We assume that you've read the main articles associated with this FAQ.</p>
+
+
+<h2 id="sec:4.1">Who invented gradient boosting machines?</h2>
+
+<p>Jerome Friedman, in his seminal paper from 1999 (updated in 2001) called <a href="https://statweb.stanford.edu/~jhf/ftp/trebst.pdf">Greedy  Function Approximation: A  Gradient Boosting Machine</a>, introduced the gradient boosting machine, though the idea of <a href="https://en.wikipedia.org/wiki/Boosting_(meta-algorithm)">boosting</a> itself was not new.</p>
+
+
+<h2 id="sec:4.2">What's the basic idea behind gradient boosting?</h2>
+
+<p>Instead of creating a single powerful model, <a href="https://en.wikipedia.org/wiki/Boosting_(meta-algorithm)">boosting</a> combines multiple simple models into a single composite model. The idea is that, as we introduce more and more simple models, the overall model becomes stronger and stronger. In boosting terminology, the simple models are called <i>weak models</i> or <i>weak learners</i>.</p>
+<p>To improve its predictions, gradient boosting looks at the difference between its current approximation, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">, and the known correct target vector, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">, which is called the residual, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">. It then trains a weak model that maps feature vector <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> to that residual vector.  Adding a residual predicted by a weak model to an existing model's approximation nudges the model towards the correct target. Adding lots of these nudges, improves the overall models approximation.</p>
+
+
+<h2 id="sec:4.3">Where does the gradient appear in gradient boosting?</h2>
+
+<p>Residuals contain direction not just magnitude information and so residuals are vectors. The sign of a residual vector is also a vector.  Most articles treat residuals as the error between the approximation and the true target, but we generically call these direction vectors to emphasize the fact that they are vectors, not just magnitudes. Considering the residual as an error vector also makes it awkward to talk about gradient boosting machines that optimize the absolute error, not the squared error.</p>
+<p>If a vector is a vector of partial derivatives of some function, then that vector is called a gradient. The residual <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg"> is the gradient of <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss function <img style="vertical-align: -3.4754999pt;" src="images/eqn-207AF0C2531C4C2A07D9BD0CE5C99A40-depth003.31.svg"> and the sign of the residual, <img style="vertical-align: -3.4125pt;" src="images/eqn-7F8058BDD644E35E4C2FB28905A3425D-depth003.25.svg">, is the gradient of <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss function <img style="vertical-align: -3.4754999pt;" src="images/eqn-ADA5F15F190CDDFC5D444721E173D975-depth003.31.svg">.</p>
+<p>By adding in approximations to residuals, gradient boosting machines are chasing gradients, hence, the term <i>gradient</i> boosting.</p>
+
+
+<h2 id="sec:4.4">What is the difference between gradient boosting optimizing squared error versus absolute error?</h2>
+
+<p>GBMs that optimize MSE (<img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss) and MAE (<img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss) both train regression trees, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, on direction vectors, but MSE-optimizing GBMs train trees on residual vectors and MAE GBMs train trees on sign vectors. The goal of training regression tree models is to group similar direction vectors into leaf nodes in both cases.  Because they are training on different vectors (residuals versus signs), the trees will group the observations in the training data differently.</p>
+<p>Both MSE and MAE GBM regression tree leaves predict residuals, but MSE GBM leaves predict the average residual given an observation, while MAE GBM leaves predict the median residual.</p>
+
+
+<h2 id="sec:4.5">What is function space?</h2>
+
+<p>Function space is just the <span class=eqn>N</span> space of predictions associated with <span class=eqn>N</span> observations. Each point in function space, or prediction space as we like to call it, is just the output of calling function <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> on observation matrix <img style="vertical-align: -3.4125pt;" src="images/eqn-DD189A760FC4CE2BCCAAE168D7F7B380-depth003.25.svg">.  </p>
+
+
+<h2 id="sec:4.6">How is gradient boosting performing gradient descent in function space?</h2>
+
+<p>First, simplify &ldquo;function space&rdquo; to just &ldquo;prediction space&rdquo; and then let <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">  be our current prediction vector in prediction space.  As we nudge <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> towards the true target, we add residual vectors. In the <a href="descent.html">last article in this series</a>, we showed that the residual vector is a gradient vector.   Subtracting gradient vectors <i>ala</i> gradient descent is the same as adding the negative of the gradient, which led us to equate the gradient descent position update equation and the gradient boosting model update equation:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th align=center >Gradient descent</th><th align=center >Gradient boosting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center><img style="vertical-align: -3.4125pt;" src="images/eqn-73584D00BACD882A3F8E3513E3060637-depth003.25.svg"></td><td align=center><img style="vertical-align: -3.4125pt;" src="images/eqn-4D8250DD7C3A0415F03B9907097546CA-depth003.25.svg"></td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>In a nutshell, chasing the direction vector, residual or sign vector, chases the (negative) gradient of a loss function just like gradient descent.</p>
+<p>Many articles, including the original by Friedman, describe the partial derivative components of the gradient as:</p>
+<div><img class="blkeqn" src="images/blkeqn-933F1AE17594210EBD5067552CD1A571.svg" alt="" width=""></div>
+<p>but, it's easier to think of it as the following gradient:</p>
+<div><img class="blkeqn" src="images/blkeqn-472238A83C7E0DBD71BE5ECC22C2A60C.svg" alt="" width=""></div>
+<p>where the gradient is with respect to <img style="vertical-align: -2.8455pt;" src="images/eqn-D96518FC873471FD6F353CD93121DB80-depth002.71.svg">.</p>
+
+
+<h2 id="sec:4.7">We train weak models on residuals, y-y_hat, so why don't we need y when using the model on an unknown feature vector?</h2>
+
+<p>The <img style="vertical-align: -3.4125pt;" src="images/eqn-D53E98B3536EB2216B38E3EE4FC0FDBF-depth003.25.svg"> weak models are, indeed, trained on the residuals <img style="vertical-align: -2.7825pt;" src="images/eqn-EC3FDA36691A82DECCB6B5081C046720-depth002.65.svg">, but we are training the models to learn a mapping from <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg"> to <img style="vertical-align: -2.7825pt;" src="images/eqn-EC3FDA36691A82DECCB6B5081C046720-depth002.65.svg">. Once we've trained the model, we present the feature vector for an unknown observation, <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg">, to get a predicted <img style="vertical-align: -2.7825pt;" src="images/eqn-7F9658A8611D26374A7798B5CAD44C84-depth002.65.svg">. After training is complete, true targets are no longer needed.  Consider the stump from the MSE GBM created in the first article:</p>
+<p><img src="images/stubs-mse-delta1.png" width="30%"></p>
+<p>Notice that the stump tests the <span class=eqn>x</span> feature vector element value to choose a leaf node. It is the leaf nodes that have the residual values, such as those we computed in the first article:</p>
+<div><img class="blkeqn" src="images/latex-178119A7EC2BBFDBFBF57B40CD3589B6.svg" alt="
+{\small
+\begin{tabular}[t]{rrrr}
+{\bf sqfeet} & {\bf rent} & $F_0$ & $\vec y-F_0$ \\
+\hline
+750 & 1160 & 1418 & -258 \\
+800 & 1200 & 1418 & -218 \\
+850 & 1280 & 1418 & -138 \\
+900 & 1450 & 1418 & 32 \\
+950 & 2000 & 1418 & 582 \\
+\end{tabular}
+}
+" width=""></div>
+<p>So, we only need the true target vector <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> during training. After training, weak models test purely feature vector values and make predictions by using an average or median residual (computed during training) stored in one of the leaves.  Once the average has been computed, training can delete all of the actual observations since they are never needed again for making predictions.</p>
+
+
+<h2 id="sec:4.8">How is gradient boosting different from our typical usage of gradient descent?</h2>
+
+<p>Gradient descent optimization in the machine learning world is typically used to find the parameters associated with a single model that optimizes some loss function, such as the squared error. In other words, we are moving parameter vector <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> around, looking for a minimal value of loss function <img style="vertical-align: -3.4125pt;" src="images/eqn-E48170057D06757276BDF2DBE697F2F5-depth003.25.svg"> that compares the model output for <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> to the intended target. The number of parameters, <img style="vertical-align: -3.4125pt;" src="images/eqn-FAB34EE94C8A0C70EE2FF2E90705D1DD-depth003.25.svg">,  differs from the number of observations, <span class=eqn>N</span>.</p>
+<p>In contrast, GBMs are meta-models consisting of multiple weak models whose output is added together to get an overall prediction. GBMs shift the current prediction vector of size <span class=eqn>N</span>, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">, around hoping to nudge it to the true target, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">. The gradient descent optimization occurs on the output of the model and not the parameters of the weak models.</p>
+<p>Getting a GBM's <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> approximation to <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> is easy mathematically. Just add the residual <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg"> to the current approximation.  Rather than directly adding a residual to the current approximation, however, GBMs add a weak model's approximation of the residual vector to the current approximation. By combining the output of a bunch of noisy models, the hope is to get a model that is much stronger but also one that does not overfit the original data.  This approach is similar to what's going on in Random Forests.</p>
+
+
+<h2 id="sec:4.9">Can you point me at a learning resource for gradients and matrix calculus?</h2>
+
+<p>Sure, check out <a href="http://parrt.cs.usfca.edu/doc/matrix-calculus/index.html">The Matrix Calculus You Need For Deep Learning</a>.</p>
+
+
+
+</body>
+</html>

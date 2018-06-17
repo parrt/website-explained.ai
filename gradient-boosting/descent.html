@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>Gradient boosting performs gradient descent</title>
+</head>
+<body>
+<h1>Gradient boosting performs gradient descent</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy Howard</a></p>
+
+<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:3.1">The intuition behind gradient descent</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:3.2">Boosting as gradient descent in prediction space</a>
+	<ul>
+			<li><a href="#sec:3.2.1">The MSE function gradient</a></li>
+			<li><a href="#sec:3.2.2">The MAE function gradient</a></li>
+			<li><a href="#sec:3.2.3">Morphing GBM into gradient descent</a></li>
+			<li><a href="#sec:3.2.4">Function space is prediction space</a></li>
+
+	</ul>
+	</li>
+	<li><a href="#sec:3.3">How gradient boosting differs from gradient descent</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:3.4">Summary</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#alg:general">General algorithm with regression tree weak models</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+<p>So far we've looked at GBMs that use two different direction vectors, the residual vector (<a href="L2-loss.html">Gradient boosting: Distance to target</a>) and the sign vector (<a href="L1-loss.html">Gradient boosting: Heading in the right direction</a>). It's natural to ask whether there are other direction vectors we can use and what effect they have on the final <img style="vertical-align: -3.4125pt;" src="images/eqn-EF285D267C9CD3C9A9FBEE626800568A-depth003.25.svg"> predictions.  Your intuition probably told you that nudging the intermediate <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> prediction towards target <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> gradually improves model performance, but would <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> ever stop if we kept increasing <span class=eqn>M</span>? If so, where would it stop? Is there something special or interesting about the sequence of vectors that <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> passes through? Moreover, we know that training a model on observations (<img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, <span class=eqn>y</span>) is a matter of finding a function, <img style="vertical-align: -3.4125pt;" src="images/eqn-90D19E7C20AA05ABA3F1722B8959EE14-depth003.25.svg">, that optimizes some cost or loss function indicating how well <span class=eqn>F</span> performs. (The procedure is to tweak model <span class=eqn>F</span>'s model parameters until we minimize the loss function.) What loss function then is a GBM optimizing and what is the relationship with the choice of direction vector?</p>
+<p>To answer these questions, we're going to employ a mathematician's favorite trick: showing how our current problem is just a flavor of another well-known problem for which we have lots of useful results. Specifically, this article shows how gradient boosting machines perform an optimization technique from numerical methods called <a href="https://en.wikipedia.org/wiki/Gradient_descent">gradient or steepest descent</a>. We'll see that a GBM training weak leaners on residual vectors optimizes the mean squared error (MSE), the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss, between the true target <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> and the intermediate predictions, <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg"> for observation matrix <img style="vertical-align: -3.4125pt;" src="images/eqn-5C3565B155A932AE4DD65207F1E9824C-depth003.25.svg">. A GBM that trains weak learners on sign vectors optimizes the mean absolute error (MAE), the <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss. </p>
+<p>To help make the connection between gradient boosting and gradient descent, let's take a small detour to reinvent the technique of gradient descent used to optimize functions. Once we've got a good handle on both ideas, we'll see how similar they are mathematically.</p>
+
+
+<h2 id="sec:3.1">The intuition behind gradient descent</h2>
+
+<p>Both of us (Terence and Jeremy) have a story where we had to make our way down a mountain in the pitch black of night or dense fog. (<i>Spoiler alert</i>: we both made it back!) Obviously, the way to get down is to keep going downhill until you reach the bottom, taking steps to the left, right, forward, backward or at an angle in order to minimize the &ldquo;elevation function.&rdquo; Rather than trying to find the best angle to step, we can treat each direction, forward/backward and left/right, separately and then combine them to obtain the best step direction.  The procedure is to swing your foot forwards and backwards to figure out which way is downhill on, say, the North/South axis, then swing your foot left and right to figure out which way is downhill on the East/West axis (Boot clipart from <span class=inlinecode>http://etc.usf.edu/clipart/</span>):</p>
+<p><img src="images/directions.png" width="30%"></p>
+<p>We're looking for a direction vector with components for each of the <span class=eqn>x</span> and <span class=eqn>y</span> axes that takes us downhill, according to some elevation function, <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg">. We can represent the components of the downhill direction vector as a sign vector, such as</p>
+<p><img style="vertical-align: -3.4125pt;" src="images/eqn-815417267F76F6F460A4A61F9DB75FDB-depth003.25.svg"><i>which way is down in x direction</i>, <i>which way is down in y direction</i><img style="vertical-align: -3.4125pt;" src="images/eqn-0FBD1776E1AD22C59A7080D35C7FD4DB-depth003.25.svg"> = <img style="vertical-align: -3.4125pt;" src="images/eqn-7DEC1D46E68831C4ECA28B020FCB1604-depth003.25.svg"></p>
+<p>which would indicate a step to the left and forward. To actually move downhill, all we have to do is add the direction vector to the current position to get the new position: <img style="vertical-align: -3.4125pt;" src="images/eqn-030C9A31672A036176CCD49E75C1DE9B-depth003.25.svg">.</p>
+<p>The sign vector works well but does not take into consideration the steepness of the slope in each axis. If the slope is gradual to the left (<span class=eqn>x</span>) but steep to the front (<span class=eqn>y</span>), we might prefer a direction vector of <img style="vertical-align: -3.4125pt;" src="images/eqn-F358F93F9AF42C842FE92DC6EFA4CB90-depth003.25.svg">. The idea is to take big steps along an axis when the slope is steep but small steps when the slope is shallow. As we approach the bottom of the mountain, we should take really small steps to avoid overshooting and going back up the other side.  Updating the current position with a direction vector containing magnitude information, proportional to the slope, automatically takes smaller steps as the slope flattens out.</p>
+<p>Mathematically, we don't move our foot around to learn about the slope of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg">, we  compute the direction vector from the <a href="http://parrt.cs.usfca.edu/doc/matrix-calculus/index.html#sec3">partial derivatives</a> of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg"> with respect to the <span class=eqn>x</span> and <span class=eqn>y</span> dimensions. Such derivatives use notation <img style="vertical-align: -4.9035pt;" src="images/eqn-84D799755A7F73945BD58B2E057121AB-depth004.67.svg"> and <img style="vertical-align: -6.657pt;" src="images/eqn-A2DE2EC029172B84A0A0E8A8D00F5A6F-depth006.34.svg">. If we stack those partial derivatives into a vector, it's called a <i>gradient</i> and is written:</p>
+<div><img class="blkeqn" src="images/blkeqn-3CB98BE043DBA0D064EBE9375EDAF5F1.svg" alt="" width=""></div>
+<p>The gradient is is actually the opposite or negative of the direction vector we want because the slope always points in the uphill direction. This is easiest to see in two dimensions:</p>
+<p><img src="images/1d-vectors.png" width="40%"></p>
+<p>For a small change change in <span class=eqn>x</span> to the right, <img style="vertical-align: -0.5pt;" src="images/eqn-B56546A86AB832A9B2A5B15F96519319-depth000.14.svg">, the function value <img style="vertical-align: -3.4125pt;" src="images/eqn-50BBD36E1FD2333108437A2CA378BE62-depth003.25.svg"> will go up if the slope is positive or go down if the slope is negative. Here, <img style="vertical-align: -2.856pt;" src="images/eqn-DFCF79E3D5443AC2EC1E8739062D54E2-depth002.72.svg"> is negative for <img style="vertical-align: -0.51pt;" src="images/eqn-609B5A2156D89B8809A3C7E0C26ECC2D-depth000.51.svg"> and positive for <img style="vertical-align: -0.51pt;" src="images/eqn-1631F135663F065D258FA73A3F1D3FF5-depth000.51.svg">.  Consequently, to move downhill, not uphill, we update the current position by adding in the <b>negative</b> of the gradient.</p>
+<p>Let's generalize our position update equation to handle more than two dimensions. Rather than <span class=eqn>x</span> and <span class=eqn>y</span>, let's use <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> (in bold) to represent all of the function parameters, which means our &ldquo;elevation&rdquo; function to optimize now takes a vector argument, <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg">. As we update <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, we want the value of <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg"> to decrease. When it stops decreasing, <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> will have arrived at the position giving the minimum value of <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg">.  Because we'll need this to show the relationship between gradient boosting and gradient descent, let's formally give the update equation. The next position of <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, at time step <span class=eqn>t</span>, is given by:</p>
+<div><img class="blkeqn" src="images/blkeqn-C4E65371F54883CC8BA722D89CC545F0.svg" alt="" width=""></div>
+<p>In practice, we need to restrict the size of the steps we take from <img style="vertical-align: -2.8455pt;" src="images/eqn-4BADEFB63905B2A2E0E6A8501405B5FC-depth002.71.svg"> to <img style="vertical-align: -2.1525pt;" src="images/eqn-0AB0269B8B3F41199EB06D5B9A9945B6-depth002.05.svg"> by shrinking the direction vector using a learning rate, <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg">, whose value is less than 1.  (Imagine a function that is only valid between, say, -2 and 2 but whose output values range from 0 to 1,000; direction vectors derived from the slope would force overly large steps and so we attenuate the steps with the learning rate.) This brings us to the position update equation found in most literature:</p>
+<div><img class="blkeqn" src="images/blkeqn-73584D00BACD882A3F8E3513E3060637.svg" alt="" width=""></div>
+<p>The key takeaways from this gradient descent discussion are:</p>
+<ul>
+<li>Minimizing a function, <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg">, means finding the <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> position where <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg"> has minimal value.</li>
+<li>The procedure is to pick some initial (random or best guess) position for <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> and then gradually nudge <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> in the downhill direction, which is the direction where the <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg"> value is smaller.</li>
+<li>The gradient of <img style="vertical-align: -3.4125pt;" src="images/eqn-31F0899998453598C175CF15FD5A8F92-depth003.25.svg"> gives us the direction of uphill and so we negate the gradient to get the downhill direction vector.</li>
+<li>We update position <img style="vertical-align: -2.8455pt;" src="images/eqn-4BADEFB63905B2A2E0E6A8501405B5FC-depth002.71.svg"> to <img style="vertical-align: -2.1525pt;" src="images/eqn-0AB0269B8B3F41199EB06D5B9A9945B6-depth002.05.svg">, where the function is lower, by adding the direction vector to <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, scaled by the learning rate, <img style="vertical-align: -2.7825pt;" src="images/eqn-FFE9F913124F345732E9F00FA258552E-depth002.65.svg">.</li>
+</ul>
+<p>Ok, we're finally ready to show how gradient boosting is doing a particular kind of gradient descent.</p>
+
+
+<h2 id="sec:3.2">Boosting as gradient descent in prediction space</h2>
+
+<p>Our goal is to show that training a GBM is performing gradient-descent minimization on some loss function between our true target, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">, and our approximation, <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg">. That means showing that adding weak models, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, to our GBM additive model:</p>
+<div><img class="blkeqn" src="images/blkeqn-F8B8ACA2375FC1021747C3C52DE4E531.svg" alt="" width=""></div>
+<p>is performing gradient descent in some way.  It makes sense that nudging our approximation, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">, closer and closer to the true target <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> would be performing gradient descent. For example, at each step, the residual <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg"> gets smaller. We must be minimizing some function related to the distance between the true target and our approximation. Let's revisit our golfer analogy and visualize the squared error between the approximation and the true value, <img style="vertical-align: -3.4125pt;" src="images/eqn-AC48B4EDE0FE8139AEC9891B7EC16C32-depth003.25.svg">:</p>
+<p><img src="images/golf-MSE.png" width="70%"></p>
+<p>Since <img style="vertical-align: -3.4125pt;" src="images/eqn-0325610F73E7FD5A2D5400BDDB75C64E-depth003.25.svg">, let's think about the ball as <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> and the golfer nudging <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> towards target <span class=eqn>y</span>.  At each step, we have to figure out which direction to go. At <img style="vertical-align: -2.1944997pt;" src="images/eqn-F19B4656EC11CE4B8F1D59857C8291BF-depth002.09.svg"> and <img style="vertical-align: -2.0475pt;" src="images/eqn-BC6B0EFD3BED4DFABE15757CF4089D87-depth001.95.svg">, we should move <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> to the right; at <img style="vertical-align: -2.0475pt;" src="images/eqn-ADFA0C88EC236F64B0C078015D65DB2B-depth001.95.svg">, we should move <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> to the left. How far should we move <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg">? We could move by +1 and -1, the sign of the direction, or we could take into consideration the distance of <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> to the target <span class=eqn>y</span>, <img style="vertical-align: -2.7825pt;" src="images/eqn-295047303CBBAF12088863BE5CCFFBFE-depth002.65.svg">. That distance just happens to be in the opposite (negative) direction of the slope of the MSE loss function, <img style="vertical-align: -3.4125pt;" src="images/eqn-53466DC1B6EEF54DDB8302D0F4DA7B1C-depth003.25.svg">. (Recall that the derivative is positive in the uphill direction and so taking the negative gives the direction of downhill or lower cost.) So, at least in this single-observation case, adding the residual to <img style="vertical-align: -2.7825pt;" src="images/eqn-13ADA0B94F610AD731B13DD5262AF022-depth002.65.svg"> is subtracting the slope, which is exactly what gradient descent does.</p>
+<div class=aside><b>The key insight</b><br>
+The key to unlocking the relationship for more than one observation is to see that the residual, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">, is a direction vector. It's not just the magnitude of the difference. Moreover, the vector points in the direction of a better approximation and, hence, a smaller loss between the true <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> and <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> vectors. That suggests that the direction vector is also (the negative of) a loss function gradient.  <b>Chasing the direction vector in a GBM is chasing the (negative) gradient of a loss function via gradient descent.</b> 
+</div>
+<p>In the next two sections, we'll show that the gradient of the MSE loss function is the residual direction vector and the gradient of the MAE loss function is the sign direction vector. Then, we can put it all together to show GBM is mathematically performing a gradient descent on the loss function.</p>
+
+
+<h3 id="sec:3.2.1">The MSE function gradient</h3>
+
+<p>To uncover the loss function optimized by a GBM whose <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models are trained on the residual vector, we just have to integrate the residual <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">. It's actually easier, though, to go the other direction and compute the gradient of the MSE loss function to show that it is the residual vector. The MSE loss function computed from <span class=eqn>N</span> observations in matrix <img style="vertical-align: -3.4125pt;" src="images/eqn-5C3565B155A932AE4DD65207F1E9824C-depth003.25.svg"> is:</p>
+<div><img class="blkeqn" src="images/blkeqn-0559D5223769469907C456834FE6DAB7.svg" alt="" width=""></div>
+<p>but let's substitute <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> for the model output, <img style="vertical-align: -3.4125pt;" src="images/eqn-EF285D267C9CD3C9A9FBEE626800568A-depth003.25.svg">, to make the equation more clear:</p>
+<div><img class="blkeqn" src="images/blkeqn-F3B6DB855B4F95383EE84B4BF0832AD1.svg" alt="" width=""></div>
+<p>Also, since <span class=eqn>N</span> is a constant once we start boosting, and <img style="vertical-align: -3.4125pt;" src="images/eqn-50BBD36E1FD2333108437A2CA378BE62-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-433A46FBBFED32587016CC08205971FB-depth003.25.svg"> have the same <span class=eqn>x</span> minimum point, let's drop the <img style="vertical-align: -4.8719997pt;" src="images/eqn-4761211CBDA7F82FC281AA7B73439102-depth004.64.svg"> constant:</p>
+<div><img class="blkeqn" src="images/blkeqn-BF7644AFE9973F6C7A3904C48C8A0EC5.svg" alt="" width=""></div>
+<p>Now, let's take the partial derivative of the loss function with respect to a specific  <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> approximation:</p>
+<div><img class="blkeqn" src="images/latex-37FFABE0C427C96D5A431E60A2C9DC2D.svg" alt="
+\begin{eqnarray*}
+\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} (y_i - \hat y_j)^2 \\
+ &=& \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)^2\\
+ &=& 2 (y_j - \hat y_j)
+\end{eqnarray*}
+" width=""></div>
+<p>(We can remove the summation because the partial derivative of <span class=eqn>L</span> for <img style="vertical-align: -2.856pt;" src="images/eqn-82CB38CFB7B8F079DDA70C6A96F37479-depth002.72.svg"> is 0.)</p>
+<p>That means the gradient with respect to <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> is:</p>
+<div><img class="blkeqn" src="images/blkeqn-FE1C756657CBD3A43A95976C3D632070.svg" alt="" width=""></div>
+<p>Dropping the constant in front again leaves us with the gradient being the same as the residual vector: <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">. So, chasing the residual vector in a GBM is chasing the gradient vector of the MSE <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss function while performing gradient descent.</p>
+
+
+<h3 id="sec:3.2.2">The MAE function gradient</h3>
+
+<p>Let's see what happens with the MAE loss function:</p>
+<div><img class="blkeqn" src="images/blkeqn-D759E3D3A397C217E00F26E8285D0CD6.svg" alt="" width=""></div>
+<p>The partial derivative with respect to a specific approximation <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> is:</p>
+<div><img class="blkeqn" src="images/latex-F45F51AD4C0153BDBD47BC9D708EC184.svg" alt="
+\begin{eqnarray*}
+\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} |y_i - \hat y_j| \\
+ &=& \frac{\partial}{\partial \hat y_j} |y_j - \hat y_j|\\
+ &=& sign(y_j - \hat y_j)
+\end{eqnarray*}
+" width=""></div>
+<p>giving gradient:</p>
+<div><img class="blkeqn" src="images/blkeqn-DB4D93811BE9E87D9247FBDA9A543181.svg" alt="" width=""></div>
+<p>This shows that chasing the sign vector in a GBM is chasing the gradient vector of the MAE <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss function while performing gradient descent.</p>
+
+
+<h3 id="sec:3.2.3">Morphing GBM into gradient descent</h3>
+
+<p>Now that we have all of the pieces, let's prove the general result that a GBM is performing gradient descent on a loss function that compares the target <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> to the model's previous approximation, <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">, to get the new approximation, <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg">. To do this, we'll morph the GBM additive model recurrence relation into the gradient descent position update equation. Let's start by simplifying the GBM recurrence relation:</p>
+<div><img class="blkeqn" src="images/blkeqn-F8B8ACA2375FC1021747C3C52DE4E531.svg" alt="" width=""></div>
+<p>by substituting the <img style="vertical-align: -0.5pt;" src="images/eqn-BFCEC5037B487046BD1C188EB244AAEF-depth000.14.svg"> approximation variable as <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg"> to get:</p>
+<div><img class="blkeqn" src="images/blkeqn-218D932034CF71418E0D53CCD12DBC58.svg" alt="" width=""></div>
+<p>Since <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> is trained on and is an approximation to the direction vector, which is a function of <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">, such as residual vector <img style="vertical-align: -3.4125pt;" src="images/eqn-DB25F5DA18D55677194040E7FDC7FBC4-depth003.25.svg">, let's replace the weak model prediction with the target data it's trained on. We haven't given the direction vector a symbol yet, so for the purposes of this proof, let's refer to the direction vector as <img style="vertical-align: -2.8455pt;" src="images/eqn-AF4DAD7403D57790C11895AE0D8D9E57-depth002.71.svg"> because it is derived from <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">. (Friedman calls <img style="vertical-align: -2.8455pt;" src="images/eqn-AF4DAD7403D57790C11895AE0D8D9E57-depth002.71.svg"> the <i>pseudo-response</i> and uses symbol <img style="vertical-align: -2.4464998pt;" src="images/eqn-A0D17D79426DD74BB3A32C5BD4143AFE-depth002.33.svg">, but we avoid <img style="vertical-align: -2.4464998pt;" src="images/eqn-A0D17D79426DD74BB3A32C5BD4143AFE-depth002.33.svg"> because it resembles our use of <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> too much.) Our equation now looks much simpler:</p>
+<div><img class="blkeqn" src="images/blkeqn-E7D9E45841AE72A69B88B26E34F201F5.svg" alt="" width=""></div>
+<p>Next, we can flip the addition to a subtraction by subtracting the negative:</p>
+<div><img class="blkeqn" src="images/blkeqn-0FFEF781C8C216FACE6CB95811D5FD23.svg" alt="" width=""></div>
+<p>and there's nothing wrong with changing the iteration variable from <span class=eqn>m</span> to <span class=eqn>t</span>:</p>
+<div><img class="blkeqn" src="images/blkeqn-50C9F5F2D3063483D4C74FA97C0A921E.svg" alt="" width=""></div>
+<p>Now, compare that to the gradient descent position update equation:</p>
+<div><img class="blkeqn" src="images/blkeqn-73584D00BACD882A3F8E3513E3060637.svg" alt="" width=""></div>
+<p>Those equations are identical if we choose direction vector <img style="vertical-align: -2.8455pt;" src="images/eqn-BDD94627D17D58A72F080A1E28BF839F-depth002.71.svg"> to be <img style="vertical-align: -3.4125pt;" src="images/eqn-EE0EA85CFCE05E3E26D752A9FE3BC55B-depth003.25.svg"> for some <span class=eqn>f</span>, which means a GBM would be performing gradient descent using the gradient of <span class=eqn>f</span>. Let <span class=eqn>f</span> be the general loss function <img style="vertical-align: -3.4125pt;" src="images/eqn-05308F7014A1D170B206455583C147B0-depth003.25.svg"> and we have discovered what direction vector to train our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak models on:</p>
+<div><img class="blkeqn" src="images/blkeqn-0B29BA43C3B44AF690954E01A30B9D7C.svg" alt="" width=""></div>
+<p>So, adding another <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg"> weak model to a GBM is actually adding the negative of the gradient of a loss function to get the next approximation:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th align=center >Gradient descent</th><th align=center >Gradient boosting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center><img style="vertical-align: -3.4125pt;" src="images/eqn-73584D00BACD882A3F8E3513E3060637-depth003.25.svg"></td><td align=center><img style="vertical-align: -3.4125pt;" src="images/eqn-4D8250DD7C3A0415F03B9907097546CA-depth003.25.svg"></td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>When <span class=eqn>L</span> is the MSE loss function, <span class=eqn>L</span>'s gradient is the residual vector and a gradient descent optimizer should chase that residual, which is exactly what the gradient boosting machine does as well. When <span class=eqn>L</span> is the MAE loss function, <span class=eqn>L</span>'s gradient is the sign vector, leading gradient descent and gradient boosting to step using the sign vector.</p>
+<p>The implications of all of this fancy footwork is that we can use a GBM to optimize any differentiable loss function by training our weak models on the negative of the loss function gradient (with respect to the previous approximation).  Understanding this derivation from the GBM recurrence relation to gradient descent update equation is much harder to see without the <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg"> substitution, as we'll see next. </p>
+
+
+<h3 id="sec:3.2.4">Function space is prediction space</h3>
+
+<p>Most GBM articles follow Friedman's notation (on page 4, equation for <img style="vertical-align: -3.4125pt;" src="images/eqn-82A7F41BDE6B835EA46F8C9A63DC5EFC-depth003.25.svg">) and describe the gradient as this scary-looking expression for the partial derivative with respect to our approximation of <span class=eqn>y<sub>i</sub></span> for observation <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg">:</p>
+<div><img class="blkeqn" src="images/blkeqn-933F1AE17594210EBD5067552CD1A571.svg" alt="" width=""></div>
+<p>Hmm... let's see if we can tease this apart.  First, evaluate the expression according to the subscript, <img style="vertical-align: -3.4125pt;" src="images/eqn-A70743D4308973650CB5239B6BD1EABD-depth003.25.svg">:</p>
+<div><img class="blkeqn" src="images/blkeqn-1DFD6E5CDF828A9FDE0034C69DE81211.svg" alt="" width=""></div>
+<p>Next, let's remove the <span class=eqn>i</span> index variable to look at the entire gradient, instead of a specific observation's partial derivative:</p>
+<div><img class="blkeqn" src="images/blkeqn-A29E895FDC5106D141EF5837FAEF90EE.svg" alt="" width=""></div>
+<p>But, what does it mean to take the partial derivative with respect to a function, <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">? Here is where we find it much easier to understand the gradient expression using <img style="vertical-align: -2.4464998pt;" src="images/eqn-0035A6EE6D4B064DBC8E6EF7F2836B98-depth002.33.svg">, rather than <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg">.  Both are just vectors, but it's easier to see that when we use a simple variable name, <img style="vertical-align: -2.4464998pt;" src="images/eqn-0035A6EE6D4B064DBC8E6EF7F2836B98-depth002.33.svg">. Substituting, we get a gradient expression that references two vector variables <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> and <img style="vertical-align: -2.8455pt;" src="images/eqn-D96518FC873471FD6F353CD93121DB80-depth002.71.svg">:</p>
+<div><img class="blkeqn" src="images/blkeqn-17C824AD1850D47124DAEA8DE4F1FB13.svg" alt="" width=""></div>
+<p>Variable <img style="vertical-align: -2.8455pt;" src="images/eqn-D96518FC873471FD6F353CD93121DB80-depth002.71.svg"> is a position in &ldquo;function space,&rdquo; which just means a vector result of evaluating function <img style="vertical-align: -3.4125pt;" src="images/eqn-27770CF48299B74454C0E5CB1E1037FC-depth003.25.svg">. This is why GBMs perform &ldquo;gradient descent in function space,&rdquo; but it's easier to think of it as &ldquo;gradient descent in prediction space&rdquo; where <img style="vertical-align: -2.8455pt;" src="images/eqn-D96518FC873471FD6F353CD93121DB80-depth002.71.svg"> is our prediction.</p>
+
+
+
+<h2 id="sec:3.3">How gradient boosting differs from gradient descent</h2>
+
+<p>Before finishing up, it's worth examining the differences between gradient descent and gradient boosting.  To make things more concrete, let's consider applying gradient descent to train a neural network (NN). Training seeks to find the weights and biases, model parameters <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, that optimize the loss between the desired NN output, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">, and the current output, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">. If we assume a squared error loss function, NN gradient descent training computes the next set of parameters by adding the residual vector, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">, to the current <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg"> (subtracting the squared error gradient).</p>
+<p>In contrast, GBMs are meta-models consisting of multiple weak models whose output is added together to get an overall prediction. The optimization we're concerned with here occurs, not on the parameters of the weak models themselves but, instead, on the composite model prediction, <img style="vertical-align: -3.4125pt;" src="images/eqn-1D44D4F5154460583964CC82E13B1711-depth003.25.svg">. GBM training occurs on two levels then, one to train the weak models and one on the overall composite model. It is the overall training of the composite model that performs gradient descent by adding the residual vector (assuming a squared error loss function) to get the improved model prediction. Training a NN using gradient descent tweaks model parameters whereas training a GBM tweaks (boosts) the model output. </p>
+<p>Also, training a NN with gradient descent directly adds a direction vector to the current <img style="vertical-align: -0.5pt;" src="images/eqn-8BB50605FF63759107F02187B2EE1A8D-depth000.00.svg">, whereas training a GBM adds a weak model's approximation of the direction vector to the current output, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">.  Consequently, it's likely that a GBM's MSE and MAE will decrease monotonically during training but, given the weak approximations of our <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">, monotonicity is not guaranteed. The GBM loss function could bounce around a bit on its way down.</p>
+<p>One final note on training regression trees used for weak models. The interesting thing is that, regardless of the direction vector (negative gradient), regression trees can always get away with using the squared error to compute node split points; i.e., even when the overall GBM is minimizing the absolute error.  The difference between optimizing MSE and MAE error for the GBM is that the weak models train on different direction vectors. How the regression trees compute splits is not a big issue since the stumps are really weak and give really noisy approximations anyway.</p>
+
+
+<h2 id="sec:3.4">Summary</h2>
+
+<p>This 3-part article exploded in size beyond our initial expectations, but hopefully it will provide the necessary pieces to explain how gradient boosting machines work in detail. There's a lot of math in this last chunk, but we can summarize it as follows. Every time we add a new weak model to a GBM, we hope to nudge our prediction, <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg">, towards the target, <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg">.  Prediction <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> will take smaller and smaller steps to eventually converge on <img style="vertical-align: -2.4464998pt;" src="images/eqn-A88C58DF8A96A946E23933961F9CB34D-depth002.33.svg"> (modulo noise generated by imperfect weak models, <img style="vertical-align: -2.1525pt;" src="images/eqn-0DDFC81BF6E635063312FC353AB81BB5-depth002.05.svg">).  We say that prediction <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> sweeps through function space because <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> it is the result of some <img style="vertical-align: -3.4125pt;" src="images/eqn-191839F34F477BA3C838961CADD1F406-depth003.25.svg"> function evaluation. It's easier to think of this as sweeping through prediction space.</p>
+<p>The nudges that we take are the residual or the sign vector between the true target and our approximation (for the common loss functions). We've shown these to be optimizing MSE and MAE, respectively, because the residual is the negative of the MSE gradient and the sign vector is the negative of the MAE gradient.  Chasing the direction vector is, therefore, performing a gradient descent that optimizes the loss function.</p>
+<p>We can use any differentiable loss function we want with GBMs, per the general algorithm in the next section, by using a direction vector that is the negative of the loss function's gradient.  If we're satisfied with optimizing MSE or MAE, then all of the math in this last part of the 3-part article is unnecessary. We only need the math to show how to use any loss function we want.   For the most part, GBM implementations will use the <a href="L2-loss.html#alg:l2">GBM algorithm to minimize L2 loss</a> or <a href="L1-loss.html#alg:l1">GBM algorithm to minimize L1 loss</a>.</p>
+
+
+<h2 id="alg:general">General algorithm with regression tree weak models</h2>
+
+<p>This general algorithm, derived from <a href="https://statweb.stanford.edu/~jhf/ftp/trebst.pdf">Friedman's Gradient_Boost on page 5</a>, assumes the use of regression trees and is more complex than the specific algorithms for <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> and <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss. We need to compute the gradient of the loss function, instead of just using the residual or sign of the residual, and we need to compute weights for regression tree leaves. Each leaf, <span class=eqn>l</span>, has weight value, <span class=eqn>w</span>, that minimizes the <img style="vertical-align: -3.4125pt;" src="images/eqn-D887C81F690B262BEC6254D97C4E6BA1-depth003.25.svg"> for all <img style="vertical-align: -2.1525pt;" src="images/eqn-A26DE3236F020E05474AE484C42E845D-depth002.05.svg"> observations within that leaf. </p>
+<div><img class="blkeqn" src="images/latex-CB3574D4B05979222377D8458B38FCF4.svg" alt="
+\setlength{\algomargin}{3pt}
+\SetAlCapSkip{-10pt}
+\SetKwInput{kwReturns}{returns}
+\begin{algorithm}[H]
+\LinesNumbered
+\SetAlgorithmName{Algorithm}{List of Algorithms}
+\SetAlgoSkip{}
+\SetInd{.5em}{.5em}
+\TitleOfAlgo{{\em boost}($X$,$\vec y$,$M$,$\eta$) \kwReturns{model $F_M$}}
+Let $F_0(X)$ be value $v$ minimizing $\sum_{i=1}^N L(y_i, v)$, loss across all obs.\\
+\For{$m$ = 1 \KwTo $M$}{
+	Let $\vec r_{m-1} = \nabla_{\hat{\vec y}_{m-1}} L(\vec y,~ \hat{\vec y}_{m-1})$ where $\hat{\vec y}_{m-1} = F_{m-1}(X)$\\
+	Train regression tree $\Delta_m$ on $\vec r_{m-1}$, minimizing squared error\\
+	\ForEach{leaf $l \in \Delta_m$}{
+		Let $w$ be value minimizing $\sum_{i \in l} L(y_i, F_{m-1}(\vec x_i) + w)$ for obs. in leaf $l$\\
+		Alter $l$ to predict $w$; i.e., (not the usual mean or median)\\
+	}
+	$F_m(X) = F_{m-1}(X) + \eta \Delta_m(X)$\\
+}
+\Return{$F_M$}\\
+\end{algorithm}
+" width=""></div>
+<p>To see how this algorithm reduces to that for the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss function we have two steps to do.  First, let <img style="vertical-align: -3.4125pt;" src="images/eqn-724A434873758163D69A2A1B5D913CB3-depth003.25.svg">, whose gradient gives the residual vector <img style="vertical-align: -3.4125pt;" src="images/eqn-78A1DC1750853DF7D8D680EDF98A047A-depth003.25.svg">. Second, show that leaf weight, <span class=eqn>w</span>, is the mean of the residual of the observations in each leaf  becase the mean minimizes <img style="vertical-align: -3.4125pt;" src="images/eqn-D887C81F690B262BEC6254D97C4E6BA1-depth003.25.svg">. That means minimizing:</p>
+<div><img class="blkeqn" src="images/blkeqn-AA997431220461FB569BAC914DB45F00.svg" alt="" width=""></div>
+<p>To find the minimal value of the function with respect to <span class=eqn>w</span>, we take the partial derivative of that function with respect to <span class=eqn>w</span> and set to zero; then we solve for <span class=eqn>w</span>. Here is the partial derivative:</p>
+<div><img class="blkeqn" src="images/blkeqn-94BF1132EEC18803D4D45576AB8A18DE.svg" alt="" width=""></div>
+<p>And since <img style="vertical-align: -4.9035pt;" src="images/eqn-F7282C25E668109DB04BFA4500CF841D-depth004.67.svg">, the last term drops off:</p>
+<div><img class="blkeqn" src="images/blkeqn-7EDD4A26A5148D56EAC5FC6B3874A4DC.svg" alt="" width=""></div>
+<p>Now, set to 0 and solve for <span class=eqn>w</span>:</p>
+<div><img class="blkeqn" src="images/blkeqn-81524110B09B5163A9C6100D894BCF93.svg" alt="" width=""></div>
+<p>We can drop the constant by dividing both sides by 2:</p>
+<div><img class="blkeqn" src="images/blkeqn-D9FEB657B1C6A1BE223E0FBEC6D85887.svg" alt="" width=""></div>
+<p>Then, pull out the <span class=eqn>w</span> term:</p>
+<div><img class="blkeqn" src="images/blkeqn-19B879FD74BC0522034F1D9D680B4CEB.svg" alt="" width=""></div>
+<p>and move to the other side of the equation:</p>
+<div><img class="blkeqn" src="images/blkeqn-343D1ED707CCE0DDA082EAA93991DA5E.svg" alt="" width=""></div>
+<p>We can simplify the <span class=eqn>w</span> summation to a multiplication:</p>
+<div><img class="blkeqn" src="images/blkeqn-F4BED5DAD0915A9090D6D05E131490F5.svg" alt="" width=""></div>
+<p>Let's also flip the order of the elements within the summation to get the target variable first:</p>
+<div><img class="blkeqn" src="images/blkeqn-5C80B202C814ACF665458D3F7DACE01E.svg" alt="" width=""></div>
+<p>Divide both sides of the equation by the number of observations in the leaf:</p>
+<div><img class="blkeqn" src="images/blkeqn-04F49E42C06EEE7ECA1E8ACC6AC9ACE6.svg" alt="" width=""></div>
+<p>Finally, we see that leaf weights, <span class=eqn>w</span>, should be the mean when the loss function is the mean squared error:</p>
+<div><img class="blkeqn" src="images/blkeqn-7E9760C56E27A882F15474EC6E721D23.svg" alt="" width=""></div>
+<p>The mean is exactly what the leaves of the regression tree, trained on residuals, will predict.</p>
+
+
+
+</body>
+</html>
