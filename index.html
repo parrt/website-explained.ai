@@ -1,6 +1,15 @@
 <html>
 <head>
-<title>Explained.ai</title>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<title>explained.ai</title>
 <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
 <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
@@ -8,12 +17,47 @@
 <div class="wrapper">
 	<header>
 		<h1>explained.ai</h1>
-		<img src="gradient-boosting/images/golf-MSE.png" width=200>
+		A website dedicated to explained AI and machine learning related topics.
+		
 	</header>
 	<section>
-		<h1>Coming soon</h1>
+		<h1 style="border-bottom: 1px solid;">Articles</h1>
 	
+		<h2><a href="gradient-boosting/index.html">How to explain gradient boosting</a></h2>
+		
+		<a href="gradient-boosting/index.html"><img style="float:left; clear:left; padding: 5px;" src="gradient-boosting/images/golf-MSE.png" width=200></a>
+		<p>Gradient boosting machines (GBMs) are currently very popular and so it's a good idea for machine learning practitioners to understand how GBMs work. The problem is that understanding all of the mathematical machinery is tricky and, unfortunately, these details are needed to tune the hyper-parameters. (Tuning the hyper-parameters is required to get a decent GBM model unlike, say, Random Forests.) Our goal in this article is to explain the intuition behind gradient boosting, provide visualizations for model construction, explain the mathematics as simply as possible, and answer thorny questions such as why GBM is performing &ldquo;gradient descent in function space.&rdquo;</p>
+	
+		<h2><a href="matrix-calculus/index.html">The Matrix Calculus You Need For Deep Learning</a></h2>
+
+
+		<img style="float:left; clear:left; padding: 5px;"  src="matrix-calculus/images/neuron.png" width=200>
+			<p>This article explains all of the matrix calculus you need in order to understand the training of deep neural networks. Most of us last saw calculus in school, but derivatives are a critical part of machine learning, particularly deep neural networks, which are trained by optimizing a loss function. Pick up a machine learning paper or the documentation of a library such as PyTorch and calculus comes screeching back into your life like distant relatives around the holidays. And it's not just any old scalar calculus that pops up--you need differential matrix calculus, the shotgun wedding of linear algebra and multivariate calculus. (<a href="https://arxiv.org/abs/1802.01528">printable PDF at arxiv.org</a>)</p>
+			
+
+		<h2><a href="rf-importance/index.html">Beware Default Random Forest Importances</a></h2>
+		
+		<img style="float:left; clear:left; padding: 5px;"  src="rf-importance/images/cls_dflt_random_annotated.png" width=200>
+		<p>Training a model that accurately predicts outcomes is great, but most of the time you don't just need predictions, you want to be able to interpret your model. The problem is that the scikit-learn Random Forest feature importance and R's default Random Forest feature importance strategies are biased. </p>
+
+		<h1 style="margin:50 0 20px; border-bottom: 1px solid;">Libraries</h1>
+		
+		<h2><a href="https://github.com/parrt/random-forest-importances">rfpimp</a></h2>
+		
+		<img style="float:left; clear:left; padding: 5px;" src="rf-importance/images/corrheatmap.svg" width=200>
+		<p>The scikit-learn Random Forest feature importance and R's default Random Forest feature importance strategies are biased. To get reliable results in Python, use permutation importance, provided here and in our rfpimp package (via pip).</p>
+		
+		
+		<h2 style="clear:left;"><a href="https://github.com/parrt/lolviz">lolviz</a></h2>
+		
+		<img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/lolviz/raw/master/images/callstack.png" width=200>
+		<p>A simple Python data-structure visualization tool that started out as a List Of Lists (lol) visualizer but now handles arbitrary object graphs, including function call stacks! lolviz tries to look out for and format nicely common data structures such as lists, dictionaries, linked lists, and binary trees. This package is primarily for use in teaching and presentations with Jupyter notebooks, but could also be used for debugging data structures.</p>
+		
 	</section>
+	<footer>
+        <p>Website maintained by <a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
+        <p>Copyright &copy; 2018 by Terence Parr.<br>All rights reserved</p>
+      </footer>
 </div>
 </body>
 </html>
