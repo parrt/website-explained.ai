@@ -66,11 +66,17 @@ p {
         body {
                 font-size: 100%;
         }
+        .watermark {
+            position: static;
+        }
 }
 @media (max-width: 736px) {
         /* iphone7+ 736 wide */
         body {
                 font-size: 100%;
+        }
+        .watermark {
+            position: static;
         }
 }
 h1 {
