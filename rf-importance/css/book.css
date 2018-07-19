@@ -87,7 +87,7 @@ h1 {
     font-size: 80%;	
 }
 .codeblk {
-    font-family: Monaco;
+    font-family: "Monaco", monospace;
     font-size: 80%;
     box-sizing: border-box;
     margin: 0 0 1em 0;
