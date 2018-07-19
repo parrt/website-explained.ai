@@ -83,7 +83,7 @@ h1 {
         line-height: 1.2em;
 }
 .inlinecode {
-    font-family: "Monaco", monospace;
+    font-family: "Monaco", monospace, serif; /* the serif bit is hack to make all browsers choose right size */
     font-size: 80%;	
 }
 .codeblk {
