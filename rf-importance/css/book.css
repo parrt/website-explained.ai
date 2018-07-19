@@ -83,12 +83,12 @@ h1 {
         line-height: 1.2em;
 }
 .inlinecode {
-    font-family: "Monaco", monospace, serif; /* the serif bit is hack to make all browsers choose right size */
-    font-size: 80%;	
+    font-family: "Monaco", monospace;
+    font-size: 90%;	
 }
 .codeblk {
     font-family: "Monaco", monospace;
-    font-size: 80%;
+    font-size: 85%;
     box-sizing: border-box;
     margin: 0 0 1em 0;
     border: #E3EDF3 1px solid;
