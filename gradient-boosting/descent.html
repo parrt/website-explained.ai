@@ -134,16 +134,17 @@ The key to unlocking the relationship for more than one observation is to see th
 <p>Also, since <span class=eqn>N</span> is a constant once we start boosting, and <img style="vertical-align: -3.4125pt;" src="images/eqn-50BBD36E1FD2333108437A2CA378BE62-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-433A46FBBFED32587016CC08205971FB-depth003.25.svg"> have the same <span class=eqn>x</span> minimum point, let's drop the <img style="vertical-align: -4.8719997pt;" src="images/eqn-4761211CBDA7F82FC281AA7B73439102-depth004.64.svg"> constant:</p>
 <div><img class="blkeqn" src="images/blkeqn-BF7644AFE9973F6C7A3904C48C8A0EC5.svg" alt="" width=""></div>
 <p>Now, let's take the partial derivative of the loss function with respect to a specific  <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> approximation:</p>
-<div><img class="blkeqn" src="images/latex-37FFABE0C427C96D5A431E60A2C9DC2D.svg" alt="
+<div><img class="blkeqn" src="images/latex-46A947A9384B1632C3530D1053B33132.svg" alt="
 \begin{eqnarray*}
 \frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} (y_i - \hat y_j)^2 \\
- &=& \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)^2\\
- &=& 2 (y_j - \hat y_j)
+&=& \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)^2\\
+&=& 2 (y_j - \hat y_j) \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)\\
+ &=& - 2 (y_j - \hat y_j)
 \end{eqnarray*}
 " width=""></div>
 <p>(We can remove the summation because the partial derivative of <span class=eqn>L</span> for <img style="vertical-align: -2.856pt;" src="images/eqn-82CB38CFB7B8F079DDA70C6A96F37479-depth002.72.svg"> is 0.)</p>
 <p>That means the gradient with respect to <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C6E6FF9859172E5FF1875E44035EC57-depth002.33.svg"> is:</p>
-<div><img class="blkeqn" src="images/blkeqn-FE1C756657CBD3A43A95976C3D632070.svg" alt="" width=""></div>
+<div><img class="blkeqn" src="images/blkeqn-DF4D0F34EDDA2C23FADDB06A670BBDB5.svg" alt="" width=""></div>
 <p>Dropping the constant in front again leaves us with the gradient being the same as the residual vector: <img style="vertical-align: -2.4464998pt;" src="images/eqn-8C348F483CE25A616755F025988ED361-depth002.33.svg">. So, chasing the residual vector in a GBM is chasing the gradient vector of the MSE <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> loss function while performing gradient descent.</p>
 
 
@@ -152,15 +153,16 @@ The key to unlocking the relationship for more than one observation is to see th
 <p>Let's see what happens with the MAE loss function:</p>
 <div><img class="blkeqn" src="images/blkeqn-D759E3D3A397C217E00F26E8285D0CD6.svg" alt="" width=""></div>
 <p>The partial derivative with respect to a specific approximation <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> is:</p>
-<div><img class="blkeqn" src="images/latex-F45F51AD4C0153BDBD47BC9D708EC184.svg" alt="
+<div><img class="blkeqn" src="images/latex-F461C22C271C6E5A879D01A181A252C5.svg" alt="
 \begin{eqnarray*}
 \frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} |y_i - \hat y_j| \\
  &=& \frac{\partial}{\partial \hat y_j} |y_j - \hat y_j|\\
- &=& sign(y_j - \hat y_j)
+ &=& sign(y_j - \hat y_j) \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)\\
+ &=& - sign(y_j - \hat y_j)
 \end{eqnarray*}
 " width=""></div>
 <p>giving gradient:</p>
-<div><img class="blkeqn" src="images/blkeqn-DB4D93811BE9E87D9247FBDA9A543181.svg" alt="" width=""></div>
+<div><img class="blkeqn" src="images/blkeqn-9C94A4BC54FF89B71DE13D3E368DA4C6.svg" alt="" width=""></div>
 <p>This shows that chasing the sign vector in a GBM is chasing the gradient vector of the MAE <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> loss function while performing gradient descent.</p>
 
 
