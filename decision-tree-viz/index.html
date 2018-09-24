@@ -13,23 +13,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
 <link rel="stylesheet" type="text/css" href="css/article.css"/>
-<title>How to visualize decision tree models</title>
+<title>How to visualize decision trees</title>
 <!-- META -->
 <!-- LinkedIn meta -->
-<meta property='og:title' content="How to visualize decision tree models"/>
+<meta property='og:title' content="How to visualize decision tree"/>
 <meta property='og:image' content="http://explained.ai/decision-tree-viz/images/icons/knowledge-TD-3-X-icon.png">
-<meta property='og:description' content="."/>
+<meta property='og:description' content="Decision trees are the fundamental building block of gradient boosting machines and Random Forests(tm), probably the two most popular machine learning models for structured data. Visualizing decision trees is a tremendous aid when learning how these models work and when interpreting models. Unfortunately, current visualization packages are rudimentary and not immediately helpful to the novice. For example, we couldn't find a library that visualizes how decision nodes split up the feature space. So, we've created a general package (part of the animl library) for scikit-learn decision tree visualization and model interpretation."/>
 <meta property='og:url' content="http://explained.ai/decision-tree-viz/index.html"/>
 
 <!-- Facebook meta -->
 <meta property="og:type" content="article" />
 
 <!-- Twitter meta -->
-<meta name="twitter:title" content="How to visualize decision tree models">
+<meta name="twitter:title" content="How to visualize decision tree">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@the_antlr_guy">
 <meta name="twitter:creator" content="@the_antlr_guy">
-<meta name="twitter:description" content=".">
+<meta name="twitter:description" content="Decision trees are the fundamental building block of gradient boosting machines and Random Forests(tm), probably the two most popular machine learning models for structured data. Visualizing decision trees is a tremendous aid when learning how these models work and when interpreting models. Unfortunately, current visualization packages are rudimentary and not immediately helpful to the novice. For example, we couldn't find a library that visualizes how decision nodes split up the feature space. So, we've created a general package (part of the animl library) for scikit-learn decision tree visualization and model interpretation.">
 <meta name="twitter:image" content="http://explained.ai/decision-tree-viz/images/icons/knowledge-TD-3-X-icon.png">
 <!-- END META -->
 </head>
@@ -38,7 +38,7 @@
 <i>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
 </div>
 
-<h1>How to visualize decision tree models</h1>
+<h1>How to visualize decision trees</h1>
 
 <p></p>
 
@@ -203,7 +203,7 @@
 </tbody>
 </table>
 </center>
-<p>The scikit tree does a good job of representing the tree structure, but we have a few quibbles.  The colors aren't the best and it's not immediately obvious why some of the nodes are colored and some aren't.  If the colors represent predicted class for this classifier, one would think just the leaves would be colored because only leaves have predictions. (It turns out the non-colored nodes have no majority prediction.) Including the gini coefficient (certainty score) costs space and doesn't help with interpretation. The count of samples of the  various target classes in each node is somewhat useful, but a histogram would be even better. A target class color legend would be nice.  Finally, using true and false as the edge labels isn't as clear as, say, labels <img style="vertical-align: -0.50687pt;" src="images/eqn-524A50782178998021A88B8CD4C8DCD8-depth000.51.svg"> and <img style="vertical-align: -1.8017265pt;" src="images/eqn-4EDC933D28BFE3F5EFFE94BF892DAD38-depth001.72.svg">. The most obvious difference is that our decision nodes show feature distributions as overlapping stacked-histograms, one histogram per target class. Also, our leaf size is proportional to the number of samples in that leaf.</p>
+<p>The scikit tree does a good job of representing the tree structure, but we have a few quibbles.  The colors aren't the best and it's not immediately obvious why some of the nodes are colored and some aren't.  If the colors represent predicted class for this classifier, one would think just the leaves would be colored because only leaves have predictions. (It turns out the non-colored nodes have no majority prediction.) Including the gini coefficient (certainty score) costs space and doesn't help with interpretation. The count of samples of the  various target classes in each node is somewhat useful, but a histogram would be even better. A target class color legend would be nice.  Finally, using true and false as the edge labels isn't as clear as, say, labels <img style="vertical-align: -0.51pt;" src="images/eqn-524A50782178998021A88B8CD4C8DCD8-depth000.51.svg"> and <img style="vertical-align: -1.806pt;" src="images/eqn-4EDC933D28BFE3F5EFFE94BF892DAD38-depth001.72.svg">. The most obvious difference is that our decision nodes show feature distributions as overlapping stacked-histograms, one histogram per target class. Also, our leaf size is proportional to the number of samples in that leaf.</p>
 <p>Scikit uses the same visualization approach for decision tree regressors. For example, here is scikit's visualization using the <a href="http://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_boston.html">Boston</a> data set, with <span class=inlinecode>animl</span>'s version for comparison (click to enlarge images):</p>
 <center>
 <table style="">
