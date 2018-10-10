@@ -52,7 +52,7 @@
 		<h2><a href="decision-tree-viz/index.html">How to visualize decision trees</a></h2>
 		
 		<a href="decision-tree-viz/index.html"><img style="float:left; clear:left; padding: 5px;" src="decision-tree-viz/images/samples/wine-TD-2.svg" width=200></a>
-		<p>Decision trees are the fundamental building block of gradient boosting machines and Random Forests(tm), probably the two most popular machine learning models for structured data.  Visualizing decision trees is a tremendous aid when learning how these models work and when interpreting models.  Unfortunately, current visualization packages are rudimentary and not immediately helpful to the novice. For example, we couldn't find a library that visualizes how decision nodes split up the feature space.  So, we've created a general package (part of the <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a> library) for scikit-learn decision tree visualization and model interpretation.</p>
+		<p>Decision trees are the fundamental building block of gradient boosting machines and Random Forests(tm), probably the two most popular machine learning models for structured data.  Visualizing decision trees is a tremendous aid when learning how these models work and when interpreting models.  Unfortunately, current visualization packages are rudimentary and not immediately helpful to the novice. For example, we couldn't find a library that visualizes how decision nodes split up the feature space.  So, we've created a general package called <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a> for scikit-learn decision tree visualization and model interpretation.</p>
 	
 		<h2><a href="gradient-boosting/index.html">How to explain gradient boosting</a></h2>
 		
@@ -88,6 +88,11 @@
 
 		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Libraries</h1>
 		
+		<h2 style="clear:left;"><a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a></h2>
+		
+		<a href="https://github.com/parrt/dtreeviz"><img style="float:left; clear:left; padding: 5px;" src="http://explained.ai/decision-tree-viz/images/samples/boston-TD-3-X.svg" width=200></a>
+		<p><a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a> is a python library for decision tree visualization and model interpretation inspired by an animation from R2D3: <a href="http://www.r2d3.us/visual-intro-to-machine-learning-part-1/">A visual introduction to machine learning</a>. See article <a href="http://explained.ai/decision-tree-viz/index.html">How to visualize decision trees</a>. With <tt>dtreeviz</tt>, you can visualize how the feature space is split up at decision nodes, how the training samples get distributed in leaf nodes and how the tree makes predictions for a specific observation. These operations are critical to for understanding how classification or regression decision trees work.</p>
+
 		<h2><a href="https://github.com/parrt/random-forest-importances"><tt>rfpimp</tt></a></h2>
 		
 		<a href="https://github.com/parrt/random-forest-importances"><img style="float:left; clear:left; padding: 5px;" src="rf-importance/images/corrheatmap.svg" width=200></a>
@@ -98,6 +103,7 @@
 		
 		<a href="https://github.com/parrt/lolviz"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/lolviz/raw/master/images/callstack.png" width=200></a>
 		<p>A simple Python data-structure visualization tool that started out as a List Of Lists (lol) visualizer but now handles arbitrary object graphs, including function call stacks! lolviz tries to look out for and format nicely common data structures such as lists, dictionaries, linked lists, and binary trees. As of 1.4, lolviz also supports the display of <a href="http://www.numpy.org/">numpy</a> 1D/2D <tt>ndarray</tt>s. This package is primarily for use in teaching and presentations with Jupyter notebooks, but could also be used for debugging data structures, such as decision trees or graphs.</p>
+
 		
 	</section>
 	<footer>
