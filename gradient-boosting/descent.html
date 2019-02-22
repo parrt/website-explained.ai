@@ -153,9 +153,9 @@ The key to unlocking the relationship for more than one observation is to see th
 <p>Let's see what happens with the MAE loss function:</p>
 <div><img class="blkeqn" src="images/blkeqn-D759E3D3A397C217E00F26E8285D0CD6.svg" alt="" width=""></div>
 <p>The partial derivative with respect to a specific approximation <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> is:</p>
-<div><img class="blkeqn" src="images/latex-F461C22C271C6E5A879D01A181A252C5.svg" alt="
+<div><img class="blkeqn" src="images/latex-E5EAB80C282CA874532FD14C34F01535.svg" alt="
 \begin{eqnarray*}
-\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} |y_i - \hat y_j| \\
+\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} |y_i - \hat y_i| \\
  &=& \frac{\partial}{\partial \hat y_j} |y_j - \hat y_j|\\
  &=& sign(y_j - \hat y_j) \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)\\
  &=& - sign(y_j - \hat y_j)
