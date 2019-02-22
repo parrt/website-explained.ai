@@ -134,9 +134,9 @@ The key to unlocking the relationship for more than one observation is to see th
 <p>Also, since <span class=eqn>N</span> is a constant once we start boosting, and <img style="vertical-align: -3.4125pt;" src="images/eqn-50BBD36E1FD2333108437A2CA378BE62-depth003.25.svg"> and <img style="vertical-align: -3.4125pt;" src="images/eqn-433A46FBBFED32587016CC08205971FB-depth003.25.svg"> have the same <span class=eqn>x</span> minimum point, let's drop the <img style="vertical-align: -4.8719997pt;" src="images/eqn-4761211CBDA7F82FC281AA7B73439102-depth004.64.svg"> constant:</p>
 <div><img class="blkeqn" src="images/blkeqn-BF7644AFE9973F6C7A3904C48C8A0EC5.svg" alt="" width=""></div>
 <p>Now, let's take the partial derivative of the loss function with respect to a specific  <img style="vertical-align: -4.0424995pt;" src="images/eqn-DA186B9DCEF816CCCFBF5C83FEB540AA-depth003.85.svg"> approximation:</p>
-<div><img class="blkeqn" src="images/latex-46A947A9384B1632C3530D1053B33132.svg" alt="
+<div><img class="blkeqn" src="images/latex-A166C05D34D2B5AF45F2277CA6E505DB.svg" alt="
 \begin{eqnarray*}
-\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} (y_i - \hat y_j)^2 \\
+\frac{\partial}{\partial \hat y_j} L(\vec y, \hat{\vec y}) &=& \frac{\partial}{\partial \hat y_j} \sum_{i=1}^{N} (y_i - \hat y_i)^2 \\
 &=& \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)^2\\
 &=& 2 (y_j - \hat y_j) \frac{\partial}{\partial \hat y_j} (y_j - \hat y_j)\\
  &=& - 2 (y_j - \hat y_j)
