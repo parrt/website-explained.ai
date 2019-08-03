@@ -42,90 +42,88 @@
 
 <p><a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
 
-<p style="font-size: 80%">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.)
-<p>Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+<p style="font-size: 80%">(<i>Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.</i>)
+
+<p>I am a computer scientist retooling as a machine learning droid and have found the nomenclature used by statisticians to be peculiar to say the least, so I thought I'd put this document together. It's meant as good-natured teasing of my friends who are statisticians, but it might actually be useful to other computer scientists. I look forward to a corresponding document written by the statisticians about computer science terms!</p>
 </p>
 
 <table>
-	<tr>
-		<th>If a statistician says ...</th><th>They mean ...</th>
+	<tr valign="top">
+		<th width="35%">What a statistician says ...</th><th>What they mean ...</th>
 	</tr>
-	<tr>
-		<td>Mean</td><td>Average</td>
+	<tr valign="top">
+		<td>Mean</td><td>Average.</td>
 	</tr>
-	<tr>
-		<td>Median</td><td>Middle value or average of middle two values if even number of elements.</td>
+	<tr valign="top">
+		<td>Median</td><td>Middle value or average of middle two values if there are an even number of elements.</td>
 	</tr>
-	<tr>
-		<td>Lasso regularization</td><td>L1 regularization; see <a href="https://twitter.com/chanep/status/1086659470288216070">tweet by Ernest Chan</a></td>
+	<tr valign="top">
+		<td>Mode</td><td>Most common value.</td>
 	</tr>
-	<tr>
-		<td>Ridge regression</td><td>L2 regularization; see <a href="https://twitter.com/chanep/status/1086659470288216070">tweet by Ernest Chan</a></td> Ever notice that Ridge is constrained to a circular region that looks like a lasso and Lasso regression constrains coefficients to a square region whose edges look like a ridge?
+	<tr valign="top">
+		<td>Significant</td><td>Statistically distinguishable but indicating nothing concerning the magnitude of the difference. For example, the effect of a drug on patients might be statistically significantly different from the control group that got a placebo. But, that says nothing about how big the effect of the drug was on patients.</td>
 	</tr>
-	<tr>
-		<td>Elastic Net</td><td>L1 and L2 regularization; see <a href="https://twitter.com/chanep/status/1086659470288216070">tweet by Ernest Chan</a></td>
+	<tr valign="top">
+		<td>Type I, Type II errors</td><td>Type I error is a "false positive" and Type II error is "false negative." In hypothesis testing, there is a null hypothesis (the "control") and an alternate hypothesis. The null hypothesis could be "drug doesn't cure disease" and the alternative hypothesis could be "drug does cure disease." Type I error is a false positive, a rejection of the null hypothesis to conclude the drug works when, in fact, it does not work. A Type II error is a false negative where we do not reject the null hypothesis in favor of the alternative hypothesis but, in fact, the drug does work.</td>
 	</tr>
-	<tr>
-		<td>Design matrix</td><td>Matrix of features (or explanatory variables) usually called <i>X</i></td>
+	<tr valign="top">
+		<td>Nonparametric</td><td>Hugely parametric (i.e., lots of parameters); parametric methods have a fixed number of parameters, such as a linear model, but nonparametric methods have an arbitrary number.</td>
 	</tr>
-	<tr>
-		<td>Response or dependent variable</td><td>Target variable usually called <i>y</i> </td>
+	<tr valign="top">
+		<td>Normal distribution</td><td>Gaussian distribution.</td>
 	</tr>
-	<tr>
-		<td>Independent variables</td><td>Features or explanatory variables</td>
+	<tr valign="top">
+		<td>Response or dependent variable</td><td>Target variable usually called <i>y</i>.</td>
 	</tr>
-	<tr>
-		<td>Regression</td><td></td>
+	<tr valign="top">
+		<td>Independent variables</td><td>Features or explanatory variables.</td>
 	</tr>
-	<tr>
-		<td>Logistic regression</td><td></td>
+	<tr valign="top">
+		<td>Design matrix</td><td>Matrix of feature vectors usually called <i>X</i>.</td>
 	</tr>
-	<tr>
-		<td>ROC (Receiver operating characteristic) curve</td><td>Graph of true positive vs false positive rates</td>
+	<tr valign="top">
+		<td>Regression</td><td>Line or curve fitting through <i>(X, y)</i> training data.</td>
 	</tr>
-	<tr>
-		<td>Type I, Type II errors</td><td>False positive and false negative</td>
+	<tr valign="top">
+	<td>Logistic regression</td><td>This name totally makes sense because it simply runs the output of a regression through a sigmoid (logistic) function. The problem is that we use logistic regression for classification not regression, as the name implies.  Logistic regressors actually yield the probability of seeing a specific class; a decision rule on top of that decides between the two classes.</td>
 	</tr>
-	<tr>
-		<td>Bias-variance</td><td>underfit-overfit</td>
+	<tr valign="top">
+		<td>Shrinkage</td><td>Model parameter regularization. Constrain model parameters to "sane" values in an effort to improve generality.</td>
 	</tr>
-	<tr>
-		<td>Mean</td><td>average</td>
+	<tr valign="top">
+		<td>Lasso regularization</td><td>L1 regularization.  Regularization trades a bit of model accuracy for improved generalization and works by constraining the size of model parameters to "reasonable" values. L1 regularization constrains coefficients to a diamond shaped hyper volume by adding an L1 norm penalty term to the linear model loss function. The term LASSO means "<i>Least absolute Shrinkage and Selection Operator</i>" from the <a href="https://cs.nyu.edu/~roweis/csc2515-2006/readings/lasso.pdf">original Tibshirani paper</a>. The LASSO name is perfectly fine except for the fact that the constraint region has lots of pointy discontinuities and looks like it should be called "ridge regularization" from the shape. (Naturally, ridge regularization's constraint region looks like a lasso. haha.)<br><img src="lasso.png" width="30%"></td>
 	</tr>
-	<tr>
-		<td>Sensitivity and specificity</td><td>True positive and true negative rates</td>
+	<tr valign="top">
+		<td>Ridge regression</td><td>L2 regularization. Regularization trades a bit of model accuracy for improved generalization and works by constraining the size of model parameters to "reasonable" values. L2 regularization constrains coefficients to a spherical hyper volume by adding an L2 norm penalty term to the linear model loss function. The term Ridge from the <a href="https://www.math.arizona.edu/~hzhang/math574m/Read/RidgeRegressionBiasedEstimationForNonorthogonalProblems.pdf">original Hoerl and Kennard Ridge paper</a> was taken from the "<i>ridge traces</i>" on their coefficient plots. Unfortunately, the ridge constraint region looks like a lasso and the lasso constraint region looks like a ridge.<br><img src="ridge.png" width="30%"></td> 
 	</tr>
-	<tr>
-		<td>Nonparametric</td><td>Hugely parametric (lots of parameters)</td>
+	<tr valign="top">
+		<td>ROC (Receiver operating characteristic) curve</td><td>A graph of true positive vs false positive rates. According to Wikipedia, ROC is a term used by electrical engineers in World War II. (Warning: the AUC, area under the curve, of these ROC curves are used all over the place, but are inappropriate for highly unbalanced data sets.)</td>
 	</tr>
-	<tr>
-		<td>Model selection</td><td>Feature selection</td>
+	<tr valign="top">
+		<td>Bias-variance</td><td>The trade-off between model accuracy and generality is often called the bias-variance trade-off. Bias is a good term related to accuracy but variance is completely ambiguous and a crappy term for "overfit" or "generality".  Not sure why somebody decided variance was a good term when we already have perfectly good terms that are more specific and less overloaded.</td>
 	</tr>
-	<tr>
-		<td>Significant</td><td>Statistically distinguishable; says nothing of magnitude</td>
+	<tr valign="top">
+		<td>Sensitivity and specificity</td><td>In binary classification problems, these terrible terms simply mean true positive and true negative rates. (Recall is a much better term for sensitivity, by the way, if the more obvious true positive term doesn't work for you.)</td>
 	</tr>
-	<tr>
-		<td>Normal</td><td>Gaussian</td>
+	<tr valign="top">
+		<td>Model selection</td><td>Feature or variable selection.  The term "model" appears to be ambiguous because statisticians describe random forests and linear regressors as models, but also, say, two linear models with  different explanatory variables. I'm not sure why "variable selection" did not occur to anyone.  Maybe it's because statisticians are obsessed with linear models.</td>
 	</tr>
-	<tr>
-		<td>Bootstrap</td><td>Randomly select observations with replacement</td>
+	<tr valign="top">
+		<td>Bootstrap</td><td>From <i>n</i> observations, randomly select <i>n</i> of them with replacement.</td>
 	</tr>
-	<tr>
-		<td>Shrinkage</td><td></td>
-	</tr>
-	<tr>
+	<tr valign="top">
 		<td></td><td></td>
 	</tr>
-	<tr>
+	<tr valign="top">
 		<td></td><td></td>
 	</tr>
-	<tr>
+	<tr valign="top">
 		<td></td><td></td>
 	</tr>
-	<tr>
+	<tr valign="top">
 		<td></td><td></td>
 	</tr>
-	<tr>
+	<tr valign="top">
 		<td></td><td></td>
 	</tr>
 </table>
