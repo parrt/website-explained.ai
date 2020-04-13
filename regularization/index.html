@@ -78,6 +78,9 @@
 	</li>
 	<li><a href="#sec:1.6">The difference between L1 and L2 regularization</a>
 	<ul>
+			<li><a href="#sec:1.6.1">L1 regularization encourages zero coefficients</a></li>
+			<li><a href="#sec:1.6.2">L1 and L2 regularization encourage zero coefficients for less predictive features</a></li>
+
 	</ul>
 	</li>
 	<li><a href="#sec:1.7">How we implement L1 and L2 regularization</a>
@@ -96,6 +99,8 @@
 
 <h2 id="sec:1.1">1.1 Introduction</h2>
 
+
+<p>	<i>in progress</i></p>
 
 <p>ADD LINKS TO IMAGES</p>
 
@@ -600,9 +605,12 @@ In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. T
 
 <p>If both of these regularization techniques work well, you might be wondering why we need both. It turns out they have different but equally useful properties. From a practical standpoint, L1 tends to shrink coefficients to zero whereas L2 tends to shrink coefficients evenly. L1 is therefore useful for feature selection, as we can drop any variables associated with coefficients that go to zero. L2, on the other hand, is useful when you have collinear/codependent features.  Codependence tends to increase coefficient variance, making coefficients unreliable/unstable, which hurts model  generality. L2 reduces the variance of these estimates, which counteracts the effect of codependencies.</p>
 
-<p>Look to do some two-variable simulations of random quadratic loss functions at random locations and see how many end up with a coefficient at zero. There is no guarantee that these random parabola voids in any way represent real data sets, but it's a way to at least compare L1 and L2 regularization.</p>
 
-<p>	Does L1 encourage model coefficients to shrink to zero or does it simply not discourage zeroes? </p>
+
+<h3 id="sec:1.6.1">1.6.1 L1 regularization encourages zero coefficients</h3>
+
+
+<p>One of the key questions that I want to answer is: &ldquo;<i>Does L1 encourage model coefficients to shrink to zero?</i>&rdquo; (The answer is, Yes!) So, let's do some two-variable simulations of random quadratic loss functions at random locations and see how many end up with a coefficient at zero. There is no guarantee that these random paraboloid loss functions in any way represent real data sets, but it's a way to at least compare L1 and L2 regularization. Let's start out with symmetric loss functions that look like bowls of various  sizes and locations. </p>
 <center>
 <table style="">
 <thead>
@@ -629,7 +637,11 @@ In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. T
 </tr>
 </tbody>
 </table>
-</center><center>
+</center>
+<p>As you can see in the simulations (6000 trials), the L1 diamond constraint zeros a coefficient for any loss function whose minimum is in the zone perpendicular to the diamond edges. The L2 circular constraint only zeros a coefficient for loss function minimums on one of the axes. The gradation from green to purple represents the minimum distance of a coefficient pair on the circle to any of the coefficient zeros (North, South, East, West compass points). Clearly, L1 gives many more zero coefficients (66%) than L2 (3%) for symmetric loss functions.</p>
+
+<p>Here's what the same simulation looks like for general (potentially asymmetric and at an angle) loss functions:</p>
+<center>
 <table style="">
 <thead>
 </thead>
@@ -655,7 +667,16 @@ In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. T
 </tr>
 </tbody>
 </table>
-</center><span class=figure><center>
+</center>
+<p>Because of the various angles and shapes, such as we saw in <b>Figure 1.11</b>, more of the regularized coefficients for both L1 (73%) and L2 (5%) constraints become zero. So this basically answers the question: Yes, L1 regularized coefficients are much more likely to become zeros than L2 coefficients.</p>
+
+
+
+<h3 id="sec:1.6.2">1.6.2 L1 and L2 regularization encourage zero coefficients for less predictive features</h3>
+
+
+<p>On the other hand, we actually want to answer a more specific question: &ldquo;<i>Does L1 encourage zero coefficients for less predictive or useless features?</i>&rdquo; (Yep!) To answer that, we need to know what  loss functions look like for less predictive features. Imagine one feature is pretty important and the other is not. That would imply that the loss function looks like a taco shell or canoe, and at 90 degrees to one of the axes. <b>Figure 1.14</b> shows some examples for the L1 constraint. If <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is not very predictive as in subfigure (c), then movement left and right does not increase the cost very much, whereas, moving up and down costs a lot (we're crossing a lot of contour lines).</p>
+<span class=figure><center>
 <table style="">
 <thead>
 <tr>
@@ -700,7 +721,9 @@ In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. T
 </tr>
 </tbody>
 </table>
-</center><center><b>Figure 1.14</b>. blort</center></span><center>
+</center><center><b>Figure 1.14</b>. blort</center></span>
+<p>With the shape of those orthogonal loss functions in mind, let's do another simulation and see how many regularized coefficients go to zero:</p>
+<center>
 <table style="">
 <thead>
 </thead>
@@ -726,13 +749,18 @@ In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. T
 </tr>
 </tbody>
 </table>
-</center><div class=aside><b>Random loss functions used in simulation</b><br>
+</center>
+<p>Orthogonal loss functions result in more zero coefficients than the general case, which is what we would expect, but the effect is not huge; 73% to 80%. L2, on the other hand, sees a huge boost in the number of zero coefficients, from 5% to 43%!  We definitely want more zero coefficients for the case where one of the features is less predictive.  Fortunately, both L1 and L2 deliver in this case! </p>
+
+<p>A more scientific approach would also do simulations for the many variable case, but I think this article provides enough evidence for me to believe L1 encourages zeros. Besides, James D. Wilson, a statistician and fellow faculty member, told me there's a theorem that says that the probability of a coefficient going to zero approaches 100% as the number of features goes to infinity. Apparently, as the number of features goes to infinity, the diamond-shaped collapses in on itself to a point.</p>
+<div class=aside><b>Random loss functions used in simulation</b><br>
 For math nerds, this is the equation used to generate the random loss functions:
 <div><img class="blkeqn" src="images/blkeqn-71F4C9E9A5474302445E4AD6322B194C.svg" alt="" width=""></div>
 
 <p>where <img style="vertical-align: -3.4125pt;" src="images/eqn-FE9FB5B1A0E8DC9AFD7B356D4C55A611-depth003.25.svg"> scales the bowl in the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> direction, <img style="vertical-align: -3.4125pt;" src="images/eqn-F40AC17B6189D537B1D28D0EDECE9FC3-depth003.25.svg"> scales the <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> direction, <img style="vertical-align: -3.4125pt;" src="images/eqn-DD69012E53197BE3398DD058A5A6720C-depth003.25.svg"> controls the amount of tilt/angle away from vertical or horizontal, and (<img style="vertical-align: -3.4125pt;" src="images/eqn-E13E31C2E04DA324A2975421D9B029C3-depth003.25.svg">,<img style="vertical-align: -3.4125pt;" src="images/eqn-796D8E5EFBD5F5FC065D9B0250C0AA78-depth003.25.svg">) is the position in coefficient space of the minimum loss function value. (<img style="vertical-align: -3.4125pt;" src="images/eqn-284297B52391FDE0C273B9B2B34F89EC-depth003.25.svg"> means uniform random variable between <span class=eqn>k</span> and <span class=eqn>l</span>.)</p>
 
 </div>
+
 
 
 <h2 id="sec:1.7">1.7 How we implement L1 and L2 regularization</h2>
