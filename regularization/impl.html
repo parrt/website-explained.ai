@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>How regularization works in practice</title>
+<!-- META -->
+<!-- LinkedIn meta -->
+<meta property='og:title' content="A visual explanation of linear model regularization"/>
+<meta property='og:image' content="http://explained.ai/regularization/images/reg3D.svg">
+<meta property='og:description' content=""/>
+<meta property='og:url' content="http://explained.ai/regularization/index.html"/>
+
+<!-- Facebook meta -->
+<meta property="og:type" content="article" />
+
+<!-- Twitter meta -->
+<meta name="twitter:title" content="A visual explanation of linear model regularization">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@the_antlr_guy">
+<meta name="twitter:creator" content="@the_antlr_guy">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="http://explained.ai/regularization/images/reg3D.svg">
+<!-- END META -->
+</head>
+<body>
+<div class="watermark">
+<i><a href='http://explained.ai/regularization/index.html'>Main article</a><br>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
+</div>
+
+<h1>4 How regularization works in practice</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
+
+<p style="font-size: 80%">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.)</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:4.1">A quick hard constraint regularization recap</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:4.2">Recasting hard constraints as soft constraints</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<p>If we think about regularization as just constraining how close we can get to the true loss function minimum, regularization is not that hard to understand (assuming you understand linear models, of course). Conceptually, regularization uses a circle or diamond as a hard constraint. If the loss function minimum is outside the constraint region, the regularized version will appear somewhere on the boundary of the constraint region. We saw this earlier, and depicted the constraint region as a simple gray circle for L2 regularization:</p>
+
+<p><center>
+<img src="images/reg3D.svg" width="30%">
+</center></p>
+
+<p>So, this is conceptually how things work, but it's not easy to implement this way.  Let's review the mathematics notation that describes the conceptual constraints; then we can move on to how we actually express regularization for implementation purposes.</p>
+
+
+
+<h2 id="sec:4.1">4.1 A quick hard constraint regularization recap</h2>
+
+
+<p>We want to fit a linear model with three coefficients and two variables to some data:</p>
+
+<p><img style="vertical-align: -3.0765pt;" src="images/eqn-A2EFEA5E2E5392BC522CD98A7E4D60AF-depth002.93.svg"></p>
+
+<p>To do that, we want to pick <img style="vertical-align: -4.0424995pt;" src="images/eqn-35E985D710477A356D19570D41E41111-depth003.85.svg"> coefficients that minimize the loss function; the loss function just says how good of a fit the equation is to the training data. The mean squared error is the usual loss function and it is the average squared difference between the known true <img style="vertical-align: -2.7825pt;" src="images/eqn-4BE66AD2CF5C98540DB20BD7DF0C0413-depth002.65.svg"> values and our predictions, <img style="vertical-align: -2.7825pt;" src="images/eqn-11477AE3C754D1E3F7950B3DAA7173A8-depth002.65.svg">:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-C3AF60FA16AA61331A4349C2BA1F55C3.svg" alt="" width=""></div>
+
+<p>By substituting <img style="vertical-align: -2.7825pt;" src="images/eqn-11477AE3C754D1E3F7950B3DAA7173A8-depth002.65.svg"> into the loss function, we get the typical equation that describes fitting a linear model:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-DD8DA049321F31BB326441FAB4A0BA38.svg" alt="" width=""></div>
+
+<p>To add a hard constraint, we add &ldquo;subject to.&rdquo; For L2 it, looks like this:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-588B266459DC0293C0452BE900417E6C.svg" alt="" width=""></div>
+
+<p>and, for L1, it looks like:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-01E523C82FF3C0B5652153D0FB522443.svg" alt="" width=""></div>
+
+
+
+<h2 id="sec:4.2">4.2 Recasting hard constraints as soft constraints</h2>
+
+
+<p>To implement a loss function with a hard constraint, we could use a gradient descent minimization approach as usual. The problem is that, at each step moving us closer to the loss function minimum, we'd need an IF-statement asking if <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> had exceeded the constraint. Certainly that would work, but it would definitely slow down the computation. (Insert discussion of branching, pipeline bubbles, etc... on modern processors). </p>
+
+<p>An alternative approach is to convert the constraint into just another term of the loss function, thus, making it a <i>soft constraint</i>. For L2, replace &ldquo;subject to <img style="vertical-align: -3.6225pt;" src="images/eqn-CDCD7E172D37F6A2652CFE9C7501E062-depth003.45.svg">&rdquo; with <img style="vertical-align: -3.6225pt;" src="images/eqn-D8A89CBA8205C0AD4087DA0EECEFEE3C-depth003.45.svg">:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-BBFF8AFED12D79218469FE0EC1ECB3AE.svg" alt="" width=""></div>
+
+<p>and, for L1, we get the analogous:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-B5A422FD5CF83B5CADD4139B5CA46AAD.svg" alt="" width=""></div>
+
+<p>This replacement is mathematically legal because there exists a <img style="vertical-align: -0.5pt;" src="images/eqn-C6A6EB61FD9C6C913DA73B3642CA147D-depth000.22.svg"> value that is equivalent to some <span class=eqn>t</span> for the hard constraint, per the magic of <a href="https://en.wikipedia.org/wiki/Lagrange_multiplier">Lagrange multipliers</a>. <img style="vertical-align: -0.5pt;" src="images/eqn-C6A6EB61FD9C6C913DA73B3642CA147D-depth000.22.svg"> is unknown just like <span class=eqn>t</span>, but at least now we have a single function to minimize, rather than a function subject to a constraint. To find <img style="vertical-align: -0.5pt;" src="images/eqn-C6A6EB61FD9C6C913DA73B3642CA147D-depth000.22.svg">, we try a bunch of <img style="vertical-align: -0.5pt;" src="images/eqn-C6A6EB61FD9C6C913DA73B3642CA147D-depth000.22.svg"> values and see which one gives us a regularized linear model that has the smallest validation set error.</p>
+
+<p>The loss function now has two terms, one for MSE (blue) and one for throttling down coefficient values (orange). Visually, we get two bowl-shaped quadratic surfaces, where the soft constraint is centered at the origin (0,0), as shown in <b>Figure 4.1</b>. The larger the coefficient(s), the higher the orange penalty term and, hence, the higher the loss function. It keeps coefficients low, like a hard constraint, but not at a fixed boundary.</p>
+<span class=figure><center>
+<table style="">
+<thead>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/constraint3D.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/constraint2D.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 4.1</b>. MSE loss function + soft constraint to penalize coefficients that get too big.</center></span>
+<p>Net effect is that regularization pulls min loss location closer to origin!</p>
+
+<p><center>
+<img src="images/lagrange-animation.gif" width="60%">
+</center></p>
+
+
+
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>The difference between L1 and L2 regularization</title>
+<!-- META -->
+<!-- LinkedIn meta -->
+<meta property='og:title' content="A visual explanation of linear model regularization"/>
+<meta property='og:image' content="http://explained.ai/regularization/images/reg3D.svg">
+<meta property='og:description' content=""/>
+<meta property='og:url' content="http://explained.ai/regularization/index.html"/>
+
+<!-- Facebook meta -->
+<meta property="og:type" content="article" />
+
+<!-- Twitter meta -->
+<meta name="twitter:title" content="A visual explanation of linear model regularization">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@the_antlr_guy">
+<meta name="twitter:creator" content="@the_antlr_guy">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="http://explained.ai/regularization/images/reg3D.svg">
+<!-- END META -->
+</head>
+<body>
+<div class="watermark">
+<i><a href='http://explained.ai/regularization/index.html'>Main article</a><br>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
+</div>
+
+<h1>3 The difference between L1 and L2 regularization</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
+
+<p style="font-size: 80%">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.)</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:3.1">L1 regularization encourages zero coefficients</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:3.2">L1 and L2 regularization encourage zero coefficients for less predictive features</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#why">Why is L1 more likely to zero coefficients than L2?</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<p>If both of these regularization techniques work well, you might be wondering why we need both. It turns out they have different but equally useful properties. From a practical standpoint, L1 tends to shrink coefficients to zero whereas L2 tends to shrink coefficients evenly. L1 is therefore useful for feature selection, as we can drop any variables associated with coefficients that go to zero. L2, on the other hand, is useful when you have collinear/codependent features. (An example pair of codependent features is <span class=inlinecode>gender</span> and <span class=inlinecode>ispregnant</span> since, at the current level of medical technology, only females can be <span class=inlinecode>ispregnant</span>.) Codependence tends to increase coefficient variance, making coefficients unreliable/unstable, which hurts model  generality. L2 reduces the variance of these estimates, which counteracts the effect of codependencies.</p>
+
+
+
+<h2 id="sec:3.1">3.1 L1 regularization encourages zero coefficients</h2>
+
+
+<p>One of the key questions that I want to answer is: &ldquo;<i>Does L1 encourage model coefficients to shrink to zero?</i>&rdquo; (The answer is, Yes!) So, let's do some two-variable simulations of random quadratic loss functions at random locations and see how many end up with a coefficient at zero. There is no guarantee that these random paraboloid loss functions in any way represent real data sets, but it's a way to at least compare L1 and L2 regularization. Let's start out with symmetric loss functions, which look like bowls of various sizes and locations, and compare how many zero coefficients appear for L1 and L2 regularization:</p>
+<center>
+<table style="">
+<thead>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-symmetric-cloud.png" width="65%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-symmetric-cloud.png" width="65%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>Green dots represent a random loss function that resulted in a  regularized coefficient being zero. Blue represents a random loss function where no regularized coefficient was zero (North, South, East, West compass points). Orange represents loss functions in L2 plots that had at least one coefficient close to zero (within 10% of the max distance of any coefficent pair.) As you can see in the simulations (5000 trials), the L1 diamond constraint zeros a coefficient for any loss function whose minimum is in the zone perpendicular to the diamond edges. The L2 circular constraint only zeros a coefficient for loss function minimums sitting really close to or on one of the axes. The orange zone indicates where L2 regularization gets close to a zero for a random loss function. Clearly, L1 gives many more zero coefficients (66%) than L2 (3%) for symmetric loss functions.</p>
+
+<p>In the more general case, loss functions can be asymmetric and at an angle, which results in more zeros for L1 and slightly more zeros for L2:</p>
+<center>
+<table style="">
+<thead>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-cloud.png" width="65%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-cloud.png" width="65%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>Because of the various angles and shapes, such as we saw in <b>Figure 2.4</b>, more of the regularized coefficients for both L1 (72%) and L2 (5%) constraints become zero.  Also notice that there are a number of orange dots not clustered around the axes for L2; they are more spread out than for symmetric loss functions.  This might not be a perfect simulation, I think it's good enough to get our answer: <i>Yes, L1 regularized coefficients are much more likely to become zeros than L2 coefficients.</i></p>
+<div class=aside><b>Random loss functions used in simulation</b><br>
+For math nerds, this is the equation used to generate the random loss functions:
+<div><img class="blkeqn" src="images/blkeqn-F5D5612AF552AD8907A438FF49AE0C24.svg" alt="" width=""></div>
+
+<p>where <img style="vertical-align: -3.4125pt;" src="images/eqn-FE9FB5B1A0E8DC9AFD7B356D4C55A611-depth003.25.svg"> scales the bowl in the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> direction, <img style="vertical-align: -3.4125pt;" src="images/eqn-F40AC17B6189D537B1D28D0EDECE9FC3-depth003.25.svg"> scales the <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> direction, <img style="vertical-align: -3.4125pt;" src="images/eqn-DD69012E53197BE3398DD058A5A6720C-depth003.25.svg"> controls the amount of tilt/angle away from vertical or horizontal, and (<img style="vertical-align: -3.4125pt;" src="images/eqn-E13E31C2E04DA324A2975421D9B029C3-depth003.25.svg">,<img style="vertical-align: -3.4125pt;" src="images/eqn-796D8E5EFBD5F5FC065D9B0250C0AA78-depth003.25.svg">) is the position in coefficient space of the minimum loss function value. <img style="vertical-align: -3.4125pt;" src="images/eqn-284297B52391FDE0C273B9B2B34F89EC-depth003.25.svg"> means uniform random variable between <span class=eqn>k</span> and <span class=eqn>l</span>.</p>
+
+</div>
+
+
+<h2 id="sec:3.2">3.2 L1 and L2 regularization encourage zero coefficients for less predictive features</h2>
+
+
+<p>On the other hand, we actually want to answer a more specific question: &ldquo;<i>Does L1 encourage zero coefficients for less predictive or useless features?</i>&rdquo; To answer that, we need to know what  loss functions look like for less predictive features. Imagine one of two features is very important and the other is not. That would imply that the loss function looks like a taco shell or canoe, and at or close to 90 degrees to one of the axes. <b>Figure 3.1</b> shows some examples for the L1 constraint. If <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is not very predictive, as in (b)(c)(d), then movement left and right does not increase the cost very much, whereas, moving up and down costs a lot (we're crossing a lot of contour lines). If <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> is not very predictive, as in (a), then changing <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> does not cost very much but moving left and right with <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> does, because we are crossing contour lines again.</p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a)</th><th align=center valign=top >(b)</th><th align=center valign=top >(c)</th><th align=center valign=top >(d)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-orthogonal-0.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-orthogonal-1.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-orthogonal-2.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-orthogonal-3.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 3.1</b>. blort</center></span>
+<p>With the shape of those orthogonal loss functions in mind, let's do another simulation and see how many regularized coefficients go to zero:</p>
+<center>
+<table style="">
+<thead>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-orthogonal-cloud.png" width="65%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-orthogonal-cloud.png" width="65%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>Orthogonal loss functions result in more zero coefficients than the general case, which is what we would expect, but the effect is not huge; 72% to 80%. L2, on the other hand, sees a huge boost in the number of zero coefficients, from 5% to 45%!  We definitely want more zero coefficients for the case where one of the features is less predictive.  Fortunately, both L1 and L2 deliver in this case!</p>
+
+<p>A more scientific approach would also do simulations for the many variable case, but I think this article provides enough evidence for me to believe L1 encourages zeros. Besides, James D. Wilson, a statistician and fellow faculty member, told me there's a theorem that says that the probability of a coefficient going to zero approaches 100% as the number of features goes to infinity. Apparently, as the number of features goes to infinity, the diamond-shaped collapses in on itself to a point.</p>
+
+
+
+<h2 id="why">3.3 Why is L1 more likely to zero coefficients than L2?</h2>
+
+
+<p>We now have empirical evidence that L1 tends to get more zero coefficients than L2 for lots of different loss functions (symmetric, asymmetric, and vertical/horizontal). Why exactly is this happening?! To answer that, let's zoom in on the constraint regions for a loss function where <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is very  predictive, but <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> is not, as depicted in <b>Figure 3.2</b>. As before, the black dot indicates the <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> location where the loss function is minimum, which is where training for a non-regularized linear regression model would put them. Each curved contour line represents the same loss function value, and the closer the contour lines, the steeper the slope across those lines. (Recall these are projections of a 3D bowl or taco shaped surface onto a two-dimensional plane.)</p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a) L1 Constraint Diamond </th><th align=center valign=top >(b) L2 Constraint Circle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/L1contour.png" width="65%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/L2contour.png" width="65%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 3.2</b>. L1 and L2 constraint regions get different coefficient locations, on the diamond and circle, for the same loss function. Keep in mind that there are an infinite number of contour lines and there is a contour line exactly meeting the L2 purple dot.</center></span>
+<p>Because the minimum location is outside the constraint regions, we know that the regularized coefficients will sit on the constraint boundaries somewhere. We have to find the point on the boundary that has the lowest loss function value. Keep in mind that, for this special case where <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is much more predictive, even small changes in <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> could give big swings in the loss function value.  On the other hand, we could move <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> pretty far up and down without affecting loss function value very much. A good strategy is, therefore, to optimize the most sensitive parameter first.</p>
+
+<p>Let's optimize the L1 case in <b>Figure 3.2</b> (a) first. I claim that the optimal <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> location is the purple dot at the diamond tip. To show this is true, all I have to do is prove to you that any movement of <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> away from that spot increases the loss. Take a look at the dashed contour line, emanating from the purple dot. The associated ellipse has the same loss value at all locations. Any <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> position outside of that ellipse, away from the black dot, has higher loss; any inside that ellipse have lower loss.  Any movement along the diamond edge, away from the purple dot, increases the loss because <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> immediately moves outside of the dashed contour.</p>
+
+<p>For the L2 case in <b>Figure 3.2</b> (b), I claim that the optimal <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> location is at the new purple dot location, not on the axis like the L1 case.  Please keep in mind that there are an infinite number of contour lines, and so there is a contour line that exactly meets the purple dot.  It's just not shown to prevent over-drawing.  The ellipse associated with the dashed contour again represents the same loss function value along its extent, and any <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> outside of that ellipse will have higher loss. That means any movement of <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> along the circular constraint boundary pulls it away from the contour of the purple dot towards higher loss values. That is why the orange dots cannot represent the optimal regularized <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg"> position.</p>
+
+<p>At least for this case, L1 gets a zero coefficient, <img style="vertical-align: -3.0765pt;" src="images/eqn-0D2CA46A43374E87B5E2F64C7E1CB200-depth002.93.svg">, whereas, L2 does not. The L1 and L2 <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> constraint is exactly the same length and the loss function is exactly the same, but we can see that L2's purple dot is far from the axis.  To convince you that L2 has a harder time getting a zero coefficient, let's zoom in even further, but this time with a loss function optimal location much closer to the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis, as shown in <b>Figure 3.3</b>.</p>
+<span class=figure>
+
+<center>
+<center>
+<img src="images/L1L2contour.png" width="20%">
+</center>
+</center>
+
+<center><b>Figure 3.3</b>. Moving away from the L1 diamond point immediately increases loss, but L2 can move upwards a little bit before moving leftward away from the loss function minimum.</center></span>
+<p>For the L1 case, the key is to notice that no matter how we move <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg">, the loss immediately goes up because the sharp backward angle of the diamond forces movement away from the black dot. For L2, the constraint circle is almost a completely vertical line for a very short distance, which matches a contour line. That means that we can move <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> upwards along the contour line, closer to the black dot with no or very little leftwards <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> movement. As the black dot loss function minimum approaches the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis, the L2 purple dot will approach the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis. In contrast, L1 gets to <img style="vertical-align: -3.0765pt;" src="images/eqn-0D2CA46A43374E87B5E2F64C7E1CB200-depth002.93.svg"> even when the black dot is far from the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis.</p>
+
+<p>This is been a long road, but I hope I've convinced you that there is  empirical evidence that L1 is more likely to get zero coefficients than L2, and there is a straightforward explanation! I think mathematicians understand intuitively why this is true, but I've never seen a decent explanation. I think <b>Figure 3.3</b> nails it.</p>
+
+
+
+</body>
+</html>

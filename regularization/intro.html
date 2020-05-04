@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>An introduction to regularization of linear models</title>
+<!-- META -->
+<!-- LinkedIn meta -->
+<meta property='og:title' content="A visual explanation of linear model regularization"/>
+<meta property='og:image' content="http://explained.ai/regularization/images/reg3D.svg">
+<meta property='og:description' content=""/>
+<meta property='og:url' content="http://explained.ai/regularization/index.html"/>
+
+<!-- Facebook meta -->
+<meta property="og:type" content="article" />
+
+<!-- Twitter meta -->
+<meta name="twitter:title" content="A visual explanation of linear model regularization">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@the_antlr_guy">
+<meta name="twitter:creator" content="@the_antlr_guy">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="http://explained.ai/regularization/images/reg3D.svg">
+<!-- END META -->
+</head>
+<body>
+<div class="watermark">
+<i><a href='http://explained.ai/regularization/index.html'>Main article</a><br>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
+</div>
+
+<h1>1 An introduction to regularization of linear models</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
+
+<p style="font-size: 80%">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.)</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:1.1">Review of linear regression</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.2">Motivation</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.3">The premise and trade-off of regularization</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<p>	<i>in progress</i></p>
+
+<p>ADD LINKS TO IMAGES</p>
+
+<p>Linear and logistic regression models are important because they are interpretable, fast, and form the basis of deep learning neural networks.  They are also extremely simple; we're just fitting lines (or hyperplanes) through training data. Unfortunately, linear models have a tendency to chase outliers in the training data, which often leads to models that don't generalize well to new data. To produce models that generalize better, we all know to <i>regularize</i> our models.  There are many forms of regularization, such as <i>early stopping</i> and <i>dropout</i> for deep learning, but for isolated linear models, <i>Lasso</i> and <i>Ridge</i> regularization are most common. (We'll call Lasso <i>L1</i> and Ridge <i>L2</i> for reasons that will become clear later.)</p>
+
+<p>My goal in this article is to provide a visual explanation for regularization of linear models and to identify the critical stumbling block that makes it hard to understand how regularization works. Here it is upfront: <b>the math used to implement regularization does not correspond to the pictures everyone uses to explain regularization</b>. Take a look at the oft-copied picture on page 71 &ldquo;Shrinkage Methods&rdquo; from the excellent book <i>The Elements of Statistical Learning</i> (Hastie, Tibshirani, Friedman):</p>
+
+<p><center>
+<img src="images/ESL_reg.png" width="40%">
+</center></p>
+
+<p>Students see this multiple times in their careers but have trouble mapping that to the relatively straightforward mathematics used to regularize linear model training. The simple reason is that those graphs show how we  regularize models conceptually, with <i>hard constraints</i>, not how we actually implement regularization, with <i>soft constraints</i>! We'll go into that in detail shortly.  This single disconnect has no doubt caused untold amounts of consternation for those trying to deeply understand regularization. Read on to learn the real story.</p>
+
+<p>I also want to answer key questions regarding L1 Lasso regularization: </p>
+<ol>
+<li><i>Does L1 encourage model coefficients to shrink to zero or does it simply not discourage zeroes?</i> (<b>It encourages zeros.</b>)</li>
+<li><i>If L1 encourages zero coefficients, why/how does it do that?!</i> (<b>The answer requires a picture, see below.</b>)</li>
+</ol>
+<p>These are not easy questions to answer in detail, even for mathematicians. Try explaining simply, without handwaving, to an inquisitive and persistent student; you'll find that you're not exactly sure. ;)</p>
+
+<p>Regularization for linear and logistic regression is done through the same penalty term in the loss function and so I will focus on just linear regression in this article.</p>
+
+
+
+<h2 id="sec:1.1">1.1 Review of linear regression</h2>
+
+
+<p>I'm assuming that readers more or less understand the mathematics of linear models and how we find optimal model coefficients to fit lines, but let's take a minute to review the important equations so we're all on the same page. (My plan is to keep mathematics notation to a minimum in this article though.)</p>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ols.svg" width="80%">
+</center>
+</center>
+
+<br><b>Figure 1.1</b>. Best fit line through 10 sample data points with ordinary least squares regression.</span>
+<p class=p_left>A single-variable linear regression model is familiar to us from high school algebra: <img style="vertical-align: -3.0765pt;" src="images/eqn-D89137BDF4CCF6C6835408F177475EDB-depth002.93.svg">, where (coefficient) <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> is the <span class=eqn>y</span>-intercept and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is the slope of the line.  For example, let's say we have the following 10 training records and want to draw the <i>best fit</i> line through the points, as shown in <b>Figure 1.1</b>. </p>
+</div>
+<div class="scrollbar_wrapper">
+<table class="dataframe dataframe-indexed">
+<thead>
+	<tr><th>&nbsp;</th><th>x</th><th>y</th></tr>
+    <tr><td></td></tr>
+</thead>
+<tbody>
+	<tr>
+	<td>0</td><td>0.0000</td><td>1.0539</td>
+	</tr>
+	<tr>
+	<td>1</td><td>1.1111</td><td>1.6931</td>
+	</tr>
+	<tr>
+	<td>2</td><td>2.2222</td><td>-0.0487</td>
+	</tr>
+	<tr>
+	<td>3</td><td>3.3333</td><td>2.5201</td>
+	</tr>
+	<tr>
+	<td>4</td><td>4.4444</td><td>4.9783</td>
+	</tr>
+	<tr>
+	<td>5</td><td>5.5556</td><td>5.7886</td>
+	</tr>
+	<tr>
+	<td>6</td><td>6.6667</td><td>7.0240</td>
+	</tr>
+	<tr>
+	<td>7</td><td>7.7778</td><td>6.0265</td>
+	</tr>
+	<tr>
+	<td>8</td><td>8.8889</td><td>9.5812</td>
+	</tr>
+	<tr>
+	<td>9</td><td>10.0000</td><td>10.7626</td>
+	</tr>
+</tbody>
+</table>
+</div>
+<p>The best fit line is <img style="vertical-align: -2.7825pt;" src="images/eqn-17A9D25CB66B4831A8C8C99788AF772F-depth002.65.svg">, where we use <img style="vertical-align: -2.7825pt;" src="images/eqn-5D28A7BA1A44A73B8C2ED21321697C59-depth002.65.svg"> to indicate it is an approximation of the true underlying relationship between <span class=eqn>x</span> and <span class=eqn>y</span>. Using Python and <span class=inlinecode>sklearn</span>, it's trivial to fit a linear model to this data:</p>
+
+
+<div class="codeblk">lm = LinearRegression()        # Create a linear model
+lm.fit(x, y)                   # Fit to x,y training data
+</div>
+
+
+<p>and get those optimal coefficients:</p>
+
+
+<div class="codeblk">optimal_beta0 = lm.intercept_
+optimal_beta1 = lm.coef_[0]
+y_pred = lm.predict(x)         # What does model predict for x? (orange line)
+</div>
+
+<p class="stdout">optimal_beta0 = -0.170, optimal_beta1 = 1.022
+y_pred [-0.17  0.97  2.1   3.24  4.37  5.51  6.64  7.78  8.91 10.05]
+</p>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ols_loss_3D.svg" width="80%">
+</center>
+</center>
+
+<br><b>Figure 1.2</b>. Loss function in 3D where the black dot shows the smallest loss, the bottom of the bowl.</span>
+<p class=p_left>The notion of <i>best fit</i> means choosing <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> to minimize the average error, the average difference between the known true <img style="vertical-align: -2.7825pt;" src="images/eqn-4BE66AD2CF5C98540DB20BD7DF0C0413-depth002.65.svg"> values and the model predictions, <img style="vertical-align: -2.7825pt;" src="images/eqn-11477AE3C754D1E3F7950B3DAA7173A8-depth002.65.svg">.  To make things nice mathematically, and to avoid needing an absolute value operator, linear regression optimizes the average (mean) squared error.  That's where the term <i>Ordinary Least Squares</i> (OLS) comes from. The MSE function is a quadratic that always gives us a bowl shaped loss function, for 2 coefficients anyway, as shown in <b>Figure 1.2</b>.  For all <span class=eqn>n</span> training records <img style="vertical-align: -3.4125pt;" src="images/eqn-4D08776015650D52DEC654178D690689-depth003.25.svg">, we find <img style="vertical-align: -3.0765pt;" src="images/eqn-579638A364F763DB16AA52D12484F97E-depth002.93.svg"> to minimize:</p>
+</div>
+
+<div><img class="blkeqn" src="images/blkeqn-C3AF60FA16AA61331A4349C2BA1F55C3.svg" alt="" width=""></div>
+
+<p>(If you're a <span class=inlinecode>numpy</span> junkie, that is just <span class=inlinecode>np.mean(y - m.predict(x))</span> for vectors <span class=inlinecode>y</span> and <span class=inlinecode>x</span>.) Plugging the model, our line equation, into that MSE we get:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-E04730F88F980C0BABD71A8F52E338B4.svg" alt="" width=""></div>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ols_loss_2D.svg" width="70%">
+</center>
+</center>
+
+<br><b>Figure 1.3</b>. Loss function contour projected onto 2D plane, as if we were looking from above.</span>
+<p class=p_left>The loss function goes up as <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> move away from the bottom of the bowl. The big black dot represents the minimum loss location, <img style="vertical-align: -3.4125pt;" src="images/eqn-2F106BCE53B4B8C2EEE6504AA6D750AB-depth003.25.svg"> = (-0.17, 1.022). (See <a href="code/loss3d.py">code/loss3d.py</a> for the code.) Three-dimensional plots are sometimes hard to interpret on a two-dimensional screen, so you will often see the loss function projected down onto the <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> plane, as shown in <b>Figure 1.3</b> (<a href="code/loss2d.py">code/loss2d.py</a>).</p>
+</div>
+
+<p>It's important to see the relationship between <b>Figure 1.1</b> and <b>Figure 1.2</b>. So, just to be clear, shifting <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> in <b>Figure 1.2</b> causes the orange line in <b>Figure 1.1</b> to tilt or move up and down, away from the best fit.</p>
+
+
+
+<h2 id="sec:1.2">1.2 Motivation</h2>
+
+
+<p>So far so good.  Given some data, we can fit a best fit line through the data where &ldquo;best fit&rdquo; means the line that minimizes the average squared between true <span class=eqn>y</span> values and those predicted by the model. Now, let's tweak the last <span class=eqn>y</span> value to be about 10 times as big: </p>
+
+
+<div class="codeblk">y.iloc[-1] = 100        # Make last y be an outlier 10x as big
+lm = LinearRegression()
+lm.fit(x, y)
+y_pred = lm.predict(x)  # Get orange line points again
+</div>
+
+<p class="stdout">optimal_beta0 = -13.150, optimal_beta1 = 5.402
+y_pred [-13.15  -7.15  -1.14   4.86  10.86  16.86  22.87  28.87  34.87  40.87]
+</p>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ols_outlier.svg" width="70%">
+</center>
+</center>
+
+<br><b>Figure 1.4</b>. .</span>
+<p class=p_left>Look what happens to the best (orange) fit line, as shown in <b>Figure 1.4</b>!  It has tilted substantially upwards towards the outlier. Because the loss function squares the error, an outlier can seriously distort the shape of the &ldquo;bowl&rdquo; and, hence, the minimum location of the optimal <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> coefficients.  Instead of <img style="vertical-align: -3.0765pt;" src="images/eqn-6C00680F8C176B569E069D6E816E4F73-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-D8F652A1D2CB98714B882F419929EC92-depth002.93.svg">, the coefficients are <img style="vertical-align: -3.0765pt;" src="images/eqn-C401CA5408F5993D77C90DADA92BDBEB-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-2D2220E94D2A16F0EC672CB1A58217D3-depth002.93.svg">. All real data is noisy and sometimes outliers are common, which provides us with the motivation to regularize our linear models.</p>
+</div>
+
+<p>Let's try Ridge regularization. Using <span class=inlinecode>sklearn</span> again, we can fit a new line through the data using Ridge regression:</p>
+
+
+<div class="codeblk">lm = Ridge(alpha=300)
+lm.fit(x, y)
+y_pred = lm.predict(x)
+</div>
+
+<p class="stdout">optimal_beta0 = 7.015, optimal_beta1 = 1.369
+y_pred [ 7.02  8.54 10.06 11.58 13.1  14.62 16.14 17.67 19.19 20.71]
+</p>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ridge.svg" width="70%">
+</center>
+</center>
+
+<br><b>Figure 1.5</b>. .</span>
+<p class=p_left>The <span class=inlinecode>alpha=300</span> hyper parameter controls how much regularization we need, in this case a lot. (For those using TensorFlow's <span class=inlinecode>keras</span> interface, you might use something like <span class=inlinecode>activity_regularizer=regularizers.l2(300)</span> in one of your layers.)  While <span class=inlinecode>sklearn</span> uses <span class=inlinecode>alpha</span>, we will use <img style="vertical-align: -0.5pt;" src="images/eqn-C6A6EB61FD9C6C913DA73B3642CA147D-depth000.22.svg"> as the regularization hyper parameter as we get into the regularization penalty term of the loss function. Notice that the regularized slope, <img style="vertical-align: -3.0765pt;" src="images/eqn-68D1C99D9C4D5C191B6DADC852804EE9-depth002.93.svg">, is very close to the unregularized <img style="vertical-align: -3.0765pt;" src="images/eqn-D8F652A1D2CB98714B882F419929EC92-depth002.93.svg"> without the outlier. With regularization, the orange fitted line is held back to an appropriate angle, as shown in <b>Figure 1.5</b>.  Using Lasso regularization, <span class=inlinecode>Lasso(alpha=45).fit(x, y)</span>, we'd get similar results.</p>
+</div>
+
+<p>The price we pay for keeping the angle sane, is a less accurate (biased) overall result than we saw for the unregularized model for non-outlier data.  The regularized <span class=eqn>y</span>-intercept is larger, <img style="vertical-align: -3.0765pt;" src="images/eqn-A67A8E23D2CA74D0C01A386D6EE1B5D2-depth002.93.svg">, compared to unregularized <img style="vertical-align: -3.0765pt;" src="images/eqn-5AFCE1F68FDB6C7B005215AFB8C3950D-depth002.93.svg"> for the data without the outlier. You can see that the orange line rests above the majority of the data points instead of going through them. The outlier is still pulling the best fit line upward a little bit.</p>
+
+
+
+<h2 id="sec:1.3">1.3 The premise and trade-off of regularization</h2>
+
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ames_ols.svg" width="100%">
+</center>
+</center>
+
+<br><b>Figure 1.6</b>. OLS regression coefficients; data was normalized, dummy-encoded categorical variables.</span><span class=sidenote>	
+
+<center>
+<center>
+<img src="images/ames_L2.svg" width="100%">
+</center>
+</center>
+
+<br><b>Figure 1.7</b>. Ridge regression coefficients; data was  normalized, dummy-encoded categorical variables. 5-fold cross validation grid search used to identify best alpha value.</span>
+<p class=p_left>We've motivated the need for regularization by showing how even a single outlier can seriously skew our model, but we still have no idea how regularization works.  Let's look at a real but small data set called <a href="http://jse.amstat.org/v19n3/decock.pdf">Ames housing price data</a> (<a href="code/ames.csv">ames.csv</a>) because it will point is in the direction of the solution. <b>Figure 1.6</b> shows a bar chart with one bar per coefficient using unregularized linear regression (with normalized explanatory variables and dummy-encoded categorical variables). Wow. Those are some big coefficients and, in fact, I had to clip them to slope magnitudes less than 1e8!  Contrast that with the Ridge-regularized coefficients in <b>Figure 1.7</b>, which are in a much more reasonable range. The accuracy of the unregularized model is ridiculously bad, with an error of <img style="vertical-align: -0.5pt;" src="images/eqn-A33F7BC1A73285E5C9C6CB7ED4150F16-depth000.29.svg"> dollars on a 20% validation set. Using Ridge regression, however, the error is only about $18k per house. With an average house price of about $180k, that's only 10% error on the same validation set. (If you're an R^2 fan, the regularized validation R^2 is 0.84.)</p>
+</div>
+
+<p>That gives us the clue we need to arrive at the premise of regularization: <b>extreme coefficients are unlikely to yield models that generalize well.</b> The solution, therefore, is simply to constrain the magnitude of linear model coefficients so they don't get too big.  Constraining the coefficients means not allowing them to reach their optimal position, at the minimum loss location.  That means we pay a price for improved generality in the form of decreased accuracy (increase in bias). Recall what we observed in <b>Figure 1.5</b> where the orange line sat a bit above the majority of the data. This is a worthwhile trade because, as we can see from this example, unregulated models on real data sets don't generalize well (they have terrible accuracy on validation sets).</p>
+
+
+
+</body>
+</html>

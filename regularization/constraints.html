@@ -1,0 +1,340 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>How regularization works conceptually</title>
+<!-- META -->
+<!-- LinkedIn meta -->
+<meta property='og:title' content="A visual explanation of linear model regularization"/>
+<meta property='og:image' content="http://explained.ai/regularization/images/reg3D.svg">
+<meta property='og:description' content=""/>
+<meta property='og:url' content="http://explained.ai/regularization/index.html"/>
+
+<!-- Facebook meta -->
+<meta property="og:type" content="article" />
+
+<!-- Twitter meta -->
+<meta name="twitter:title" content="A visual explanation of linear model regularization">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@the_antlr_guy">
+<meta name="twitter:creator" content="@the_antlr_guy">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="http://explained.ai/regularization/images/reg3D.svg">
+<!-- END META -->
+</head>
+<body>
+<div class="watermark">
+<i><a href='http://explained.ai/regularization/index.html'>Main article</a><br>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
+</div>
+
+<h1>2 How regularization works conceptually</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a></p>
+
+<p style="font-size: 80%">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a>. You might know Terence as the creator of the ANTLR parser generator.)</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:2.1">L2 Ridge regularization</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.2">L1 Lasso regularization</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<p>At this point, we've set the stage: Regularization is important for model generalization and the idea behind regularization is simply to constrain coefficients, at a small cost in overall accuracy.   Now, let's figure out how regularization constrains coefficients, at least conceptually. (In a later section, we'll look at how regularization actually works in practice.) </p>
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/reg1D.svg" width="100%">
+</center>
+</center>
+
+<br><b>Figure .1</b>. One coefficient regularization.</span>
+<p class=p_left>Take a look at the hypothetical loss function in <b>Figure .1</b>, which is just <img style="vertical-align: -3.4125pt;" src="images/eqn-F676BFB939D5AC73868A23B1C49140A3-depth003.25.svg"> for some <img style="vertical-align: -3.0765pt;" src="images/eqn-B0603860FCFFE94E5B8EEC59ED813421-depth002.93.svg"> coefficient. (In terms of high school <span class=eqn>x</span> and <span class=eqn>y</span>, this is just <img style="vertical-align: -3.4125pt;" src="images/eqn-2583EA048B7B9A1B55EE8E1427528240-depth003.25.svg"> or &ldquo;a bowl shifted to 2&rdquo;.) The minimum loss is the bottom of the curve at <img style="vertical-align: -3.0765pt;" src="images/eqn-8762015EEC8EE2E02B9FBD2E154D1CD5-depth002.93.svg">. But, imagine we know that any coefficient bigger than 1.0 (or -1.0) will reduce generality. The best regularized coefficient is, therefore, <img style="vertical-align: -3.0765pt;" src="images/eqn-D2A73C8BC75872507040C3F5548BFFA2-depth002.93.svg">, which is on the constraint  boundary in the direction of the minimum. By &ldquo;best,&rdquo; we mean the closest we can get a coefficient to the loss function minimum location without exceeding our constraint.  </p>
+</div>
+
+<p>If the loss function minimum were on the other side of the vertical axis at, say, <img style="vertical-align: -3.0765pt;" src="images/eqn-B823D6864EF9D164C2576C90FD89814D-depth002.93.svg"> then the best regularized coefficient would be <img style="vertical-align: -3.0765pt;" src="images/eqn-FDB096CB419FC224D045C84EFFD1F398-depth002.93.svg">. We call this constraint of coefficients a <i>hard constraint</i> because the coefficients are strictly limited. (Foreshadowing, we actually implement these with soft constraints that just make bigger coefficients more and more expensive.) Mathematically, this hard constraint in one dimension is <img style="vertical-align: -3.4125pt;" src="images/eqn-94258FAC487B33485894E2D792F48792-depth003.25.svg">, but we could also use <img style="vertical-align: -3.0765pt;" src="images/eqn-580FADE10C9D152291E31DB20FF7A262-depth002.93.svg"> where <span class=eqn>t</span> represents the largest coefficient we want to allow (<img style="vertical-align: -0.5pt;" src="images/eqn-B73C3280B6F85A6AC520AF103083F535-depth000.14.svg"> in this case). We use &ldquo;less than&rdquo; rather than &ldquo;equal to&rdquo; to cover the case where the minimum loss function location is within the constraint region.  In practice, we use a grid search to find the <span class=eqn>t</span> that gives the lowest validation error.</p>
+
+<p>Now, let's consider the case where we have two coefficients to regularize instead of one (e.g., there are two variables in our explanatory matrix and we are not optimizing the <span class=eqn>y</span>-intercept, <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg">). Moving from one to two coefficients means the constraint line becomes a constraint region, and there are two common choices for the shape of this region. The first is a circle, which is used for Ridge, and the second is a diamond shape, which is used for Lasso. Ridge has some simpler properties, so let's take a look at it first.</p>
+
+
+
+<h2 id="sec:2.1">2.1 L2 Ridge regularization</h2>
+
+
+<div class="p_wrapper">
+<span class=sidenote>	
+
+<center>
+<center>
+<img src="images/reg3D.svg" width="115%">
+</center>
+</center>
+
+<br><b>Figure .2</b>. Two coefficient regularization.</span>
+<p class=p_left><b>Figure .2</b> shows a hypothetical loss function with a minimum loss at <img style="vertical-align: -3.0765pt;" src="images/eqn-A65FD43D0A8BE064D1D9A97E58F7BD61-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-04B4E93DDD30EEE1D8545252DB47DDAB-depth002.93.svg">.  Surrounding the origin (0,0) there is a circular hard constraint that would prevent coefficients from reaching the minimum loss function location. The  best we could do would be coefficients on the constraint circle in the direction of the loss function minimum.  Constraining two coefficients to a circle of radius <span class=eqn>r</span> surrounding the origin means constraining the length of vector <img style="vertical-align: -3.4125pt;" src="images/eqn-2D95ED54A0C34D63F9E93BF3C21F6661-depth003.25.svg"> to <span class=eqn>r</span>. The length of a vector is just the square root of the sum of the elements, <img style="vertical-align: -3.9689999pt;" src="images/eqn-8C7D741771511CFC8C13ACB5FB1CBB30-depth003.78.svg">. Or, we could get rid of the square root and pick some other constant, <span class=eqn>t</span>, for the constraint: <img style="vertical-align: -3.6225pt;" src="images/eqn-3792F6D1149F49F478C54FF6C1C22117-depth003.45.svg">. However we choose <span class=eqn>t</span>, summing the square of coefficients sweeps out a circle on the coefficient plane. As in the one-variable case, in practice, we use a grid search to find the <span class=eqn>t</span> that gives the minimum validation error; the  value of <span class=eqn>t</span> itself is not really meaningful to us.</p>
+</div>
+<div class=aside><b>Ridge = L2 regularization = weight decay</b><br>
+Another way to say &ldquo;vector length&rdquo; is &ldquo;vector norm&rdquo; or &ldquo;Euclidean distance between two points.&rdquo; It turns out there are lots of norms and mathematicians classify them as <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> (which we'll see shortly), <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg">, ..., <img style="vertical-align: -2.0475pt;" src="images/eqn-0CDB42D742B481E755BEEA25C80A0798-depth001.95.svg">. The Euclidean distance / vector length is called the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> norm and that is why we call Ridge &ldquo;<img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> regularization.&rdquo; The boundary is always at <span class=eqn>t</span> units away from the origin, sweeping out a circle. (See <a href="https://medium.com/@montjoile/l0-norm-l1-norm-l2-norm-l-infinity-norm-7a7d18a4f40c">L1 vs L2 norm</a> for an easy to read discussion.)
+<p>While we're talking about names, L2 regression was called &ldquo;Ridge&rdquo; in the <a href="https://www.math.arizona.edu/~hzhang/math574m/Read/RidgeRegressionBiasedEstimationForNonorthogonalProblems.pdf">original paper</a> from 1970 because the author remarked that surface plots of quadratic functions often look like ridges. </p>
+
+<p>Also, L2 regularization (penalizing loss functions with sum of squares) is called <i>weight decay</i> in deep learning neural networks.</p>
+
+</div>
+<p>To get a feel for L2 regularization, look at the hypothetical loss functions in <b>Figure 2.3</b>, where I have projected the 3D loss &ldquo;bowl&rdquo; function onto the plane so we're looking at it from above. The big black dot indicates the (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) coordinate where the loss of function is minimum (bottom of the bowl). The big red dot is the (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) point on the boundary closest to the optimal loss function location subject to the circular L2 constraint. </p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a)</th><th align=center valign=top >(b)</th><th align=center valign=top >(c)</th><th align=center valign=top >(d)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-symmetric-0.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-symmetric-1.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-symmetric-2.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-symmetric-3.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 2.3</b>. blort</center></span>
+<p>All of these loss functions are symmetric, like your morning cereal bowl, which makes it easy to identify where the regularized (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) sits on the boundary circle. For symmetric loss functions, draw a line from the origin to the minimum loss function location, indicated by the dashed line in <b>Figure 2.3</b>. The optimal regularized (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) coefficients are at the intersection of that line and the boundary.  </p>
+
+<p>Although I don't show it here, if the minimum loss function location sits within the boundary region, then the regularized location is exactly the same as the minimum loss location. (That's why we use <img style="vertical-align: -0.51pt;" src="images/eqn-2712A06CA4048242CE1A85F6DBC14AB3-depth000.51.svg"> rather than <img style="vertical-align: -0.5pt;" src="images/eqn-DDACDE98528E1B2A50BBDFB9B7E91CE4-depth000.14.svg">.) Another special case is when the minimum loss location sits on one of the axes, as in <b>Figure 2.3</b> (b).  In this case, one of the regularized coefficients will also sit on the axis and, hence, one of the coefficients will be zero. We will talk a lot about zero coefficients later when comparing Ridge and Lasso.</p>
+
+<p>In general, the loss functions will not be symmetric and look more like those depicted in <b>Figure 2.4</b>. Identifying the regularized coefficients on the boundary circle is not as simple as drawing a line between the origin and the minimum loss location, such as in <b>Figure 2.4</b> (a). (I'm sure in a non-Euclidean space, such as one warped by gravity, we could draw a &ldquo;straight&rdquo; line; is there an algebraic topologist in the house?) Now, the approach is to identify the location of minimum loss that sits directly on the boundary circle. That is exactly how I plotted the location of the red dots in these figures. I computed the loss function value at many points along the circle and simply identified the location where the loss function was the smallest. This is really important and so let's make a big deal out of it:</p>
+
+<p><b>Finding the L2 coefficients location</b>: The L2 regularized coefficients sit on the L2 boundary circle where the loss function has the minimum value. So, just walk around the circle and identify the location with the minimum loss function value. (Unless the minimum loss location is inside the circle, in which case the regularized coefficient location is the same as the minimum loss location.)</p>
+
+<p>I see instructors and articles recommend students look for where a loss function contour line touches the boundary region, but this can get you in trouble.  The contour maps are a 2D projection of a smooth 3D surface and so the number and location contour lines are kind of arbitrary. For example, I chose the number of contour lines in these plots, but I could've chosen one third as many. With few contour lines, it would be challenging to find a contour line that intersected the boundary circle.  Except for <b>Figure 2.4</b> (a), the regularized coefficient location does not sit where a contour line meets the constraints circle. It's better to stick with finding the minimum loss location on the boundary circle and try not to get clever with visual rules, at least until you have more experience.</p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a)</th><th align=center valign=top >(b)</th><th align=center valign=top >(c)</th><th align=center valign=top >(d)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-0.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-1.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-2.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l2-3.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 2.4</b>. blort</center></span>
+<p>Let's look at the mathematics now. Regularizing our MSE loss function is a simple matter of adding a &ldquo;subject to&rdquo; constraint to the definition, in this case, L2 norm <img style="vertical-align: -3.6225pt;" src="images/eqn-3792F6D1149F49F478C54FF6C1C22117-depth003.45.svg">:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-588B266459DC0293C0452BE900417E6C.svg" alt="" width=""></div>
+
+<p>Everything to the left of &ldquo;subject to&rdquo; is identical to the unregularized two-variable linear-model (MSE) loss function: <img style="vertical-align: -3.0765pt;" src="images/eqn-291164F2A79A95B179514C4D9348C2CB-depth002.93.svg">. All we've done is to constrain how close (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) coefficients can get to the loss function minimum location.  Note that we do not constrain the <span class=eqn>y</span>-intercept <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> (see page 64 in &ldquo;<i>The elements of statistical learning</i>&rdquo;). We are only concerned with constraining slope angles, not where the line touches the <span class=eqn>y</span>-axis. We find the value of <span class=eqn>t</span> using a brute force search that minimizes the validation error.</p>
+
+<p>That's all there is to the concept of regularization: adding a hard constraint to the loss function equation. Congratulations, if you've gotten this far and understood everything! If all you care about is L2 Ridge regularization, the only thing left to consider is how we actually implement regularization, which we'll do in <span style="color: red">[impl]</span>.</p>
+
+<p>Now, let's take a look at the other common form of regularization.</p>
+
+
+
+<h2 id="sec:2.2">2.2 L1 Lasso regularization</h2>
+
+
+<p>If we use a diamond shape rather than a circle around the origin as the boundary region, we get <i>Lasso regularization</i>, which we will call L1 regularization because it constrains <img style="vertical-align: -3.0765pt;" src="images/eqn-F543C88F1D1D45B3C49D49DBE3828B6F-depth002.93.svg"> coefficients using the L1 norm. The L1 norm gives us a diamond shape, obtained by constraining the sum of coefficient magnitudes to some constant, <span class=eqn>t</span>. (L2 Ridge constrains the sum of the square of coefficient magnitudes.) Lasso stands for &ldquo;Least Absolute Shrinkage and Selection Operator,&rdquo; according to the <a href="http://www-stat.stanford.edu/~tibs/lasso/lasso.pdf">original paper</a>. Why we would choose a diamond over a circle will become clear shortly.</p>
+
+<p>The plots in <b>Figure 2.5</b> show the L1 diamond constraint regions in the special case where the loss function is symmetric. The regularized (<img style="vertical-align: -3.0765pt;" src="images/eqn-0833BAFFE35058C08ED1280F777C109C-depth002.93.svg">) coefficient location on the diamond occurs where a perpendicular line emanates from the diamond to the minimum loss location. The dotted lines in <b>Figure 2.5</b> show these perpendicular lines. Contrast this with L2 regularization, which draws a line from the origin to the minimum loss location for symmetric loss functions.</p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a)</th><th align=center valign=top >(b)</th><th align=center valign=top >(c)</th><th align=center valign=top >(d)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-symmetric-0.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-symmetric-1.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-symmetric-2.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-symmetric-3.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 2.5</b>.  boundary distance from origin is some of coefficient magnitudes less than some constant, t.</center></span>
+<p>In <b>Figure 2.6</b>, you'll see the general case where the loss functions are asymmetric. One of the key takeaways from these examples is that three out of four loss functions have a zero coefficient (the red dot is on an axis at a diamond peak). This is despite the fact that the minimum loss function locations look to be nowhere near an axis, which brings us to the difference between L1 and L2 in a nutshell: <b>L1 tends to give a lot more zero coefficients than L2</b>.</p>
+<span class=figure><center>
+<table style="">
+<thead>
+<tr>
+<th align=center valign=top >(a)</th><th align=center valign=top >(b)</th><th align=center valign=top >(c)</th><th align=center valign=top >(d)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-0.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-1.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-2.svg" width="100%">
+</center>
+</center>
+
+</td><td align=center valign=top>
+
+<center>
+<center>
+<img src="images/l1-3.svg" width="100%">
+</center>
+</center>
+
+</td>
+</tr>
+</tbody>
+</table>
+</center><center><b>Figure 2.6</b>. blort</center></span>
+<p>To find regularized coefficients, we follow the same rule we did for L2, except using a different boundary shape:</p>
+
+<p><b>Finding the L1 coefficients location</b>: The L1 regularized coefficients sit on the L1 boundary diamond where the loss function has the minimum value. So, just walk around the diamond and identify the location with the minimum loss function value. (Unless the minimum loss location is inside the diamond, in which case the regularized coefficient location is the same as the minimum loss location.)</p>
+
+<p>Just as we did for L2, regularizing the loss function means adding a &ldquo;subject to&rdquo; constraint. The only difference is that we are summing the coefficient magnitudes (absolute values) rather than the squared coefficient values:</p>
+
+<div><img class="blkeqn" src="images/blkeqn-01E523C82FF3C0B5652153D0FB522443.svg" alt="" width=""></div>
+
+<p>As before, we don't care what the value of <span class=eqn>t</span> is <i>per se</i>; we find the <span class=eqn>t</span> through brute force that gives the lowest validation error.</p>
+
+<p>If you've made it this far, you now understand exactly how L1 Lasso and L2 Ridge regularization work conceptually. The next step is to compare the two in detail and then we'll be ready to describe the actual implementation of regularization (versus the conceptual mechanism we've seen so far).</p>
+<div class=aside><b>The Ridge and Lasso terms seem backwards</b><br>
+In case you haven't noticed, the Ridge and Lasso terms seem kind of backwards. The circular boundary of Ridge looks more like a lasso and the constraint region for Lasso, with lots of pointy discontinuities, looks like a bunch of ridges. Ha! For more good-natured teasing of statisticians, see <a href="https://explained.ai/statspeak/index.html">Statisticians say the darndest things</a>.
+</div>
+
+
+</body>
+</html>
