@@ -190,7 +190,7 @@ def show_example(reg, force_symmetric_loss=False, force_one_nonpredictive=False)
 def just_contour(reg):
     contour_levels = 200
     cx, cy = 4, 5
-    Z = loss(B0, B1, a=9, b=1, c=0, cx=cx, cy=cy)
+    Z = loss(B0, B1, a=9, b=1, c=4, cx=cx, cy=cy)
     fig, ax = plt.subplots(1, 1, figsize=(3, 3))
     ax.set_xlabel("x", fontsize=12, labelpad=2)
     ax.set_ylabel("y", fontsize=12, labelpad=2)
@@ -218,17 +218,17 @@ def just_contour(reg):
 
 just_contour(reg='l2')
 
-np.random.seed(5) # get reproducible sequence
-show_example(reg='l1')
-np.random.seed(9)
-show_example(reg='l2')
-
-np.random.seed(6)
-show_example(reg='l1', force_symmetric_loss=True)
-np.random.seed(7)
-show_example(reg='l2', force_symmetric_loss=True)
-
-np.random.seed(5)
-show_example(reg='l1', force_one_nonpredictive=True)
-np.random.seed(5)
-show_example(reg='l2', force_one_nonpredictive=True)
+# np.random.seed(5) # get reproducible sequence
+# show_example(reg='l1')
+# np.random.seed(9)
+# show_example(reg='l2')
+#
+# np.random.seed(6)
+# show_example(reg='l1', force_symmetric_loss=True)
+# np.random.seed(7)
+# show_example(reg='l2', force_symmetric_loss=True)
+#
+# np.random.seed(5)
+# show_example(reg='l1', force_one_nonpredictive=True)
+# np.random.seed(5)
+# show_example(reg='l2', force_one_nonpredictive=True)
