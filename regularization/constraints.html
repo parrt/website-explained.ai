@@ -51,11 +51,15 @@
 <div id="toc">
 <p class="toc_title">Contents</p>
 <ul>
-	<li><a href="#sec:2.1">L2 Ridge regularization</a>
+	<li><a href="#sec:2.1">Single-variable regularization</a>
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:2.2">L1 Lasso regularization</a>
+	<li><a href="#sec:2.2">L2 Ridge regularization</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:2.3">L1 Lasso regularization</a>
 	<ul>
 	</ul>
 	</li>
@@ -66,6 +70,11 @@
 
 <p>At this point, we've set the stage: Regularization is important for model generalization and the idea behind regularization is simply to constrain coefficients, at a small cost in overall accuracy.   Now, let's figure out how regularization constrains coefficients, at least conceptually. (In a later section, we'll look at how regularization actually works in practice.) </p>
 
+
+
+<h2 id="sec:2.1">2.1 Single-variable regularization</h2>
+
+
 <div class="p_wrapper">
 <span class=sidenote>	
 
@@ -75,8 +84,8 @@
 </center>
 </center>
 
-<br><b>Figure .1</b>. One coefficient regularization.</span>
-<p class=p_left>Take a look at the hypothetical loss function in <b>Figure .1</b>, which is just <img style="vertical-align: -3.4125pt;" src="images/eqn-F676BFB939D5AC73868A23B1C49140A3-depth003.25.svg"> for some <img style="vertical-align: -3.0765pt;" src="images/eqn-B0603860FCFFE94E5B8EEC59ED813421-depth002.93.svg"> coefficient. (In terms of high school <span class=eqn>x</span> and <span class=eqn>y</span>, this is just <img style="vertical-align: -3.4125pt;" src="images/eqn-2583EA048B7B9A1B55EE8E1427528240-depth003.25.svg"> or &ldquo;a bowl shifted to 2&rdquo;.) The minimum loss is the bottom of the curve at <img style="vertical-align: -3.0765pt;" src="images/eqn-8762015EEC8EE2E02B9FBD2E154D1CD5-depth002.93.svg">. But, imagine we know that any coefficient bigger than 1.0 (or -1.0) will reduce generality. The best regularized coefficient is, therefore, <img style="vertical-align: -3.0765pt;" src="images/eqn-D2A73C8BC75872507040C3F5548BFFA2-depth002.93.svg">, which is on the constraint  boundary in the direction of the minimum. By &ldquo;best,&rdquo; we mean the closest we can get a coefficient to the loss function minimum location without exceeding our constraint.  </p>
+<br><b>Figure 2.1</b>. One coefficient regularization.</span>
+<p class=p_left>Take a look at the hypothetical loss function in <b>Figure 2.1</b>, which is just <img style="vertical-align: -3.4125pt;" src="images/eqn-F676BFB939D5AC73868A23B1C49140A3-depth003.25.svg"> for some <img style="vertical-align: -3.0765pt;" src="images/eqn-B0603860FCFFE94E5B8EEC59ED813421-depth002.93.svg"> coefficient. (In terms of high school <span class=eqn>x</span> and <span class=eqn>y</span>, this is just <img style="vertical-align: -3.4125pt;" src="images/eqn-2583EA048B7B9A1B55EE8E1427528240-depth003.25.svg"> or &ldquo;a bowl shifted to 2&rdquo;.) The minimum loss is the bottom of the curve at <img style="vertical-align: -3.0765pt;" src="images/eqn-8762015EEC8EE2E02B9FBD2E154D1CD5-depth002.93.svg">. But, imagine we know that any coefficient bigger than 1.0 (or -1.0) will reduce generality. The best regularized coefficient is, therefore, <img style="vertical-align: -3.0765pt;" src="images/eqn-D2A73C8BC75872507040C3F5548BFFA2-depth002.93.svg">, which is on the constraint  boundary in the direction of the minimum. By &ldquo;best,&rdquo; we mean the closest we can get a coefficient to the loss function minimum location without exceeding our constraint.  </p>
 </div>
 
 <p>If the loss function minimum were on the other side of the vertical axis at, say, <img style="vertical-align: -3.0765pt;" src="images/eqn-B823D6864EF9D164C2576C90FD89814D-depth002.93.svg"> then the best regularized coefficient would be <img style="vertical-align: -3.0765pt;" src="images/eqn-FDB096CB419FC224D045C84EFFD1F398-depth002.93.svg">. We call this constraint of coefficients a <i>hard constraint</i> because the coefficients are strictly limited. (Foreshadowing, we actually implement these with soft constraints that just make bigger coefficients more and more expensive.) Mathematically, this hard constraint in one dimension is <img style="vertical-align: -3.4125pt;" src="images/eqn-94258FAC487B33485894E2D792F48792-depth003.25.svg">, but we could also use <img style="vertical-align: -3.0765pt;" src="images/eqn-580FADE10C9D152291E31DB20FF7A262-depth002.93.svg"> where <span class=eqn>t</span> represents the largest coefficient we want to allow (<img style="vertical-align: -0.5pt;" src="images/eqn-B73C3280B6F85A6AC520AF103083F535-depth000.14.svg"> in this case). We use &ldquo;less than&rdquo; rather than &ldquo;equal to&rdquo; to cover the case where the minimum loss function location is within the constraint region.  In practice, we use a grid search to find the <span class=eqn>t</span> that gives the lowest validation error.</p>
@@ -85,7 +94,7 @@
 
 
 
-<h2 id="sec:2.1">2.1 L2 Ridge regularization</h2>
+<h2 id="sec:2.2">2.2 L2 Ridge regularization</h2>
 
 
 <div class="p_wrapper">
@@ -97,8 +106,8 @@
 </center>
 </center>
 
-<br><b>Figure .2</b>. Two coefficient regularization.</span>
-<p class=p_left><b>Figure .2</b> shows a hypothetical loss function with a minimum loss at <img style="vertical-align: -3.0765pt;" src="images/eqn-A65FD43D0A8BE064D1D9A97E58F7BD61-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-04B4E93DDD30EEE1D8545252DB47DDAB-depth002.93.svg">.  Surrounding the origin (0,0) there is a circular hard constraint that would prevent coefficients from reaching the minimum loss function location. The  best we could do would be coefficients on the constraint circle in the direction of the loss function minimum.  Constraining two coefficients to a circle of radius <span class=eqn>r</span> surrounding the origin means constraining the length of vector <img style="vertical-align: -3.4125pt;" src="images/eqn-2D95ED54A0C34D63F9E93BF3C21F6661-depth003.25.svg"> to <span class=eqn>r</span>. The length of a vector is just the square root of the sum of the elements, <img style="vertical-align: -3.9689999pt;" src="images/eqn-8C7D741771511CFC8C13ACB5FB1CBB30-depth003.78.svg">. Or, we could get rid of the square root and pick some other constant, <span class=eqn>t</span>, for the constraint: <img style="vertical-align: -3.6225pt;" src="images/eqn-3792F6D1149F49F478C54FF6C1C22117-depth003.45.svg">. However we choose <span class=eqn>t</span>, summing the square of coefficients sweeps out a circle on the coefficient plane. As in the one-variable case, in practice, we use a grid search to find the <span class=eqn>t</span> that gives the minimum validation error; the  value of <span class=eqn>t</span> itself is not really meaningful to us.</p>
+<br><b>Figure 2.2</b>. Two coefficient regularization.</span>
+<p class=p_left><b>Figure 2.2</b> shows a hypothetical loss function with a minimum loss at <img style="vertical-align: -3.0765pt;" src="images/eqn-A65FD43D0A8BE064D1D9A97E58F7BD61-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-04B4E93DDD30EEE1D8545252DB47DDAB-depth002.93.svg">.  Surrounding the origin (0,0) there is a circular hard constraint that would prevent coefficients from reaching the minimum loss function location. The  best we could do would be coefficients on the constraint circle in the direction of the loss function minimum.  Constraining two coefficients to a circle of radius <span class=eqn>r</span> surrounding the origin means constraining the length of vector <img style="vertical-align: -3.4125pt;" src="images/eqn-2D95ED54A0C34D63F9E93BF3C21F6661-depth003.25.svg"> to <span class=eqn>r</span>. The length of a vector is just the square root of the sum of the elements, <img style="vertical-align: -3.9689999pt;" src="images/eqn-8C7D741771511CFC8C13ACB5FB1CBB30-depth003.78.svg">. Or, we could get rid of the square root and pick some other constant, <span class=eqn>t</span>, for the constraint: <img style="vertical-align: -3.6225pt;" src="images/eqn-3792F6D1149F49F478C54FF6C1C22117-depth003.45.svg">. However we choose <span class=eqn>t</span>, summing the square of coefficients sweeps out a circle on the coefficient plane. As in the one-variable case, in practice, we use a grid search to find the <span class=eqn>t</span> that gives the minimum validation error; the  value of <span class=eqn>t</span> itself is not really meaningful to us.</p>
 </div>
 <div class=aside><b>Ridge = L2 regularization = weight decay</b><br>
 Another way to say &ldquo;vector length&rdquo; is &ldquo;vector norm&rdquo; or &ldquo;Euclidean distance between two points.&rdquo; It turns out there are lots of norms and mathematicians classify them as <img style="vertical-align: -2.0475pt;" src="images/eqn-2C6F3B6C16DF97A1B00E04FF17E4906E-depth001.95.svg"> (which we'll see shortly), <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg">, ..., <img style="vertical-align: -2.0475pt;" src="images/eqn-0CDB42D742B481E755BEEA25C80A0798-depth001.95.svg">. The Euclidean distance / vector length is called the <img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> norm and that is why we call Ridge &ldquo;<img style="vertical-align: -2.0475pt;" src="images/eqn-07CBD6C155424E110559A84DF364BE5A-depth001.95.svg"> regularization.&rdquo; The boundary is always at <span class=eqn>t</span> units away from the origin, sweeping out a circle. (See <a href="https://medium.com/@montjoile/l0-norm-l1-norm-l2-norm-l-infinity-norm-7a7d18a4f40c">L1 vs L2 norm</a> for an easy to read discussion.)
@@ -221,7 +230,7 @@ Another way to say &ldquo;vector length&rdquo; is &ldquo;vector norm&rdquo; or &
 
 
 
-<h2 id="sec:2.2">2.2 L1 Lasso regularization</h2>
+<h2 id="sec:2.3">2.3 L1 Lasso regularization</h2>
 
 
 <p>If we use a diamond shape rather than a circle around the origin as the boundary region, we get <i>Lasso regularization</i>, which we will call L1 regularization because it constrains <img style="vertical-align: -3.0765pt;" src="images/eqn-F543C88F1D1D45B3C49D49DBE3828B6F-depth002.93.svg"> coefficients using the L1 norm. The L1 norm gives us a diamond shape, obtained by constraining the sum of coefficient magnitudes to some constant, <span class=eqn>t</span>. (L2 Ridge constrains the sum of the square of coefficient magnitudes.) Lasso stands for &ldquo;Least Absolute Shrinkage and Selection Operator,&rdquo; according to the <a href="http://www-stat.stanford.edu/~tibs/lasso/lasso.pdf">original paper</a>. Why we would choose a diamond over a circle will become clear shortly.</p>

@@ -68,7 +68,7 @@
 </div>
 
 
-<p>If both of these regularization techniques work well, you might be wondering why we need both. It turns out they have different but equally useful properties. From a practical standpoint, L1 tends to shrink coefficients to zero whereas L2 tends to shrink coefficients evenly. L1 is therefore useful for feature selection, as we can drop any variables associated with coefficients that go to zero. L2, on the other hand, is useful when you have collinear/codependent features. (An example pair of codependent features is <span class=inlinecode>gender</span> and <span class=inlinecode>ispregnant</span> since, at the current level of medical technology, only females can be <span class=inlinecode>ispregnant</span>.) Codependence tends to increase coefficient variance, making coefficients unreliable/unstable, which hurts model  generality. L2 reduces the variance of these estimates, which counteracts the effect of codependencies.</p>
+<p>If both L1 and L2 regularization work well, you might be wondering why we need both. It turns out they have different but equally useful properties. From a practical standpoint, L1 tends to shrink coefficients to zero whereas L2 tends to shrink coefficients evenly. L1 is therefore useful for feature selection, as we can drop any variables associated with coefficients that go to zero. L2, on the other hand, is useful when you have collinear/codependent features. (An example pair of codependent features is <span class=inlinecode>gender</span> and <span class=inlinecode>ispregnant</span> since, at the current level of medical technology, only females can be <span class=inlinecode>ispregnant</span>.) Codependence tends to increase coefficient variance, making coefficients unreliable/unstable, which hurts model  generality. L2 reduces the variance of these estimates, which counteracts the effect of codependencies.</p>
 
 
 
@@ -134,7 +134,7 @@
 </table>
 </center>
 <p>Because of the various angles and shapes, such as we saw in <b>Figure 2.4</b>, more of the regularized coefficients for both L1 (72%) and L2 (5%) constraints become zero.  Also notice that there are a number of orange dots not clustered around the axes for L2; they are more spread out than for symmetric loss functions.  This might not be a perfect simulation, I think it's good enough to get our answer: <i>Yes, L1 regularized coefficients are much more likely to become zeros than L2 coefficients.</i></p>
-<div class=aside><b>Random loss functions used in simulation</b><br>
+<div class=aside><b>Random loss functions used in these simulations</b><br>
 For math nerds, this is the equation used to generate the random loss functions:
 <div><img class="blkeqn" src="images/blkeqn-F5D5612AF552AD8907A438FF49AE0C24.svg" alt="" width=""></div>
 
@@ -193,7 +193,10 @@ For math nerds, this is the equation used to generate the random loss functions:
 </tbody>
 </table>
 </center><center><b>Figure 3.1</b>. blort</center></span>
-<p>With the shape of those orthogonal loss functions in mind, let's do another simulation and see how many regularized coefficients go to zero:</p>
+<div class="p_wrapper">
+<p class=sidenote><span class=sup>1</span>The term &ldquo;orthogonal&rdquo; for these taco-shaped paraboloids is probably not a good one, but I was too lazy to think of a better term; I just mean vertical or horizontal tacos projected onto the 2D plane.</p>
+<p class=p_left>With the shape of those &ldquo;orthogonal&rdquo;<span class=sup>1</span> loss functions in mind, let's do another simulation and see how many regularized coefficients go to zero:</p>
+</div>
 <center>
 <table style="">
 <thead>
@@ -279,7 +282,7 @@ For math nerds, this is the equation used to generate the random loss functions:
 <center><b>Figure 3.3</b>. Moving away from the L1 diamond point immediately increases loss, but L2 can move upwards a little bit before moving leftward away from the loss function minimum.</center></span>
 <p>For the L1 case, the key is to notice that no matter how we move <img style="vertical-align: -3.4125pt;" src="images/eqn-0A759A3F5F6C618F914BA43BA1D51535-depth003.25.svg">, the loss immediately goes up because the sharp backward angle of the diamond forces movement away from the black dot. For L2, the constraint circle is almost a completely vertical line for a very short distance. That means that we can move <img style="vertical-align: -3.0765pt;" src="images/eqn-D9F51E864A6151F57E727294DA7AC28C-depth002.93.svg"> upwards, departing from the contour line, and getting closer to the black dot with no or very little leftwards <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> movement. As the black dot loss function minimum approaches the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis, the L2 purple dot will approach the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis. In contrast, L1 gets to <img style="vertical-align: -3.0765pt;" src="images/eqn-0D2CA46A43374E87B5E2F64C7E1CB200-depth002.93.svg"> even when the black dot is far from the <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> axis.</p>
 
-<p>This is been a long road, but I hope I've convinced you that there is  empirical evidence that L1 is more likely to get zero coefficients than L2, and there is a straightforward explanation! I think mathematicians understand intuitively why this is true, but I've never seen a decent explanation. I think <b>Figure 3.3</b> nails it.</p>
+<p>This is been a long road, but I hope I've convinced you that there is  empirical evidence that L1 is more likely to get zero coefficients than L2, and there is a straightforward explanation! I think mathematicians understand intuitively why this is true, but I've never seen a decent explanation. I think <b>Figure 3.3</b> nails it.  The only thing left to do is talk about loss function implementation differs from the conceptual circle and diamond constraint boundaries.</p>
 
 
 

@@ -13,7 +13,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
 <link rel="stylesheet" type="text/css" href="css/article.css"/>
-<title>An introduction to regularization of linear models</title>
+<title>A quick review of linear regression</title>
 <!-- META -->
 <!-- LinkedIn meta -->
 <meta property='og:title' content="A visual explanation of linear model regularization"/>
@@ -38,7 +38,7 @@
 <i><a href='http://explained.ai/regularization/index.html'>Main article</a><br>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
 </div>
 
-<h1>1 An introduction to regularization of linear models</h1>
+<h1>1 A quick review of linear regression</h1>
 
 <p></p>
 
@@ -51,15 +51,11 @@
 <div id="toc">
 <p class="toc_title">Contents</p>
 <ul>
-	<li><a href="#sec:1.1">Review of linear regression</a>
+	<li><a href="#sec:1.1">Motivation for regularization</a>
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:1.2">Motivation</a>
-	<ul>
-	</ul>
-	</li>
-	<li><a href="#sec:1.3">The premise and trade-off of regularization</a>
+	<li><a href="#sec:1.2">The premise and trade-off of regularization</a>
 	<ul>
 	</ul>
 	</li>
@@ -68,35 +64,12 @@
 </div>
 
 
-<p>	<i>in progress</i></p>
+<div class="p_wrapper">
+<p class=sidenote><span class=sup>1</span>My plan is to keep mathematics notation to a minimum in this article though. Also, regularization for linear and logistic regression is done through the same penalty term in the loss function and so I will focus on just linear regression in this article.</p>
+<p class=p_left>	 I'm assuming that readers are more or less familiar with the mathematics of linear models and how we find optimal model coefficients to fit lines, but let's take a minute to review the important equations so we're all on the same page.<span class=sup>1</span></p>
+</div>
 
-<p>ADD LINKS TO IMAGES</p>
-
-<p>Linear and logistic regression models are important because they are interpretable, fast, and form the basis of deep learning neural networks.  They are also extremely simple; we're just fitting lines (or hyperplanes) through training data. Unfortunately, linear models have a tendency to chase outliers in the training data, which often leads to models that don't generalize well to new data. To produce models that generalize better, we all know to <i>regularize</i> our models.  There are many forms of regularization, such as <i>early stopping</i> and <i>drop out</i> for deep learning, but for isolated linear models, <i>Lasso</i> and <i>Ridge</i> regularization are most common. (We'll call Lasso <i>L1</i> and Ridge <i>L2</i> for reasons that will become clear later.)</p>
-
-<p>My goal in this article is to provide a visual explanation for regularization of linear models and to identify the critical stumbling block that makes it hard to understand how regularization works. Here it is upfront: <i>the math used to implement regularization does not correspond to the pictures everyone uses to explain regularization</i>. Take a look at the oft-copied picture on page 71 &ldquo;Shrinkage Methods&rdquo; from the excellent book <i>The Elements of Statistical Learning</i> (Hastie, Tibshirani, Friedman):</p>
-
-<p><center>
-<img src="images/ESL_reg.png" width="40%">
-</center></p>
-
-<p>Students see this multiple times in their careers but have trouble mapping that to the relatively straightforward mathematics used to regularize linear model training. The simple reason is that those graphs show how we  regularize models conceptually, with <i>hard constraints</i>, not how we actually implement regularization, with <i>soft constraints</i>! We'll go into that in detail shortly.  This single disconnect has no doubt caused untold amounts of consternation for those trying to deeply understand regularization. Read on to learn the real story.</p>
-
-<p>I also want to answer key questions regarding L1 Lasso regularization: </p>
-<ol>
-<li><i>Does L1 encourage model coefficients to shrink to zero or does it simply not discourage zeroes?</i> (<b>It encourages zeros.</b>)</li>
-<li><i>If L1 encourages zero coefficients, why/how does it do that?!</i> (<b>The answer requires a picture, see below.</b>)</li>
-</ol>
-<p>These are not easy questions to answer in detail, even for mathematicians. Try explaining simply, without handwaving, to an inquisitive and persistent student; you'll find that you're not exactly sure. ;)</p>
-
-<p>Regularization for linear and logistic regression is done through the same penalty term in the loss function and so I will focus on just linear regression in this article.</p>
-
-
-
-<h2 id="sec:1.1">1.1 Review of linear regression</h2>
-
-
-<p>I'm assuming that readers more or less understand the mathematics of linear models and how we find optimal model coefficients to fit lines, but let's take a minute to review the important equations so we're all on the same page. (My plan is to keep mathematics notation to a minimum in this article though.)</p>
+<p>	 </p>
 
 <div class="p_wrapper">
 <span class=sidenote>	
@@ -107,8 +80,8 @@
 </center>
 </center>
 
-<br><b>Figure 1.1</b>. Best fit line through 10 sample data points with ordinary least squares regression.</span>
-<p class=p_left>A single-variable linear regression model is familiar to us from high school algebra: <img style="vertical-align: -3.0765pt;" src="images/eqn-D89137BDF4CCF6C6835408F177475EDB-depth002.93.svg">, where (coefficient) <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> is the <span class=eqn>y</span>-intercept and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is the slope of the line.  For example, let's say we have the following 10 training records and want to draw the <i>best fit</i> line through the points, as shown in <b>Figure 1.1</b>. </p>
+<br><b>Figure .1</b>. Best fit line through 10 sample data points with ordinary least squares regression.</span>
+<p class=p_left>A single-variable linear regression model is familiar to us from high school algebra: <img style="vertical-align: -3.0765pt;" src="images/eqn-D89137BDF4CCF6C6835408F177475EDB-depth002.93.svg">, where (coefficient) <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> is the <span class=eqn>y</span>-intercept and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> is the slope of the line.  For example, let's say we have the following 10 training records and want to draw the <i>best fit</i> line through the points, as shown in <b>Figure .1</b>. </p>
 </div>
 <div class="scrollbar_wrapper">
 <table class="dataframe dataframe-indexed">
@@ -179,8 +152,8 @@ y_pred [-0.17  0.97  2.1   3.24  4.37  5.51  6.64  7.78  8.91 10.05]
 </center>
 </center>
 
-<br><b>Figure 1.2</b>. Loss function in 3D where the black dot shows the smallest loss, the bottom of the bowl.</span>
-<p class=p_left>The notion of <i>best fit</i> means choosing <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> to minimize the average error, the average difference between the known true <img style="vertical-align: -2.7825pt;" src="images/eqn-4BE66AD2CF5C98540DB20BD7DF0C0413-depth002.65.svg"> values and the model predictions, <img style="vertical-align: -2.7825pt;" src="images/eqn-11477AE3C754D1E3F7950B3DAA7173A8-depth002.65.svg">.  To make things nice mathematically, and to avoid needing an absolute value operator, linear regression optimizes the average (mean) squared error.  That's where the term <i>Ordinary Least Squares</i> (OLS) comes from. The MSE function is a quadratic that always gives us a bowl shaped loss function, for 2 coefficients anyway, as shown in <b>Figure 1.2</b>.  For all <span class=eqn>n</span> training records <img style="vertical-align: -3.4125pt;" src="images/eqn-4D08776015650D52DEC654178D690689-depth003.25.svg">, we find <img style="vertical-align: -3.0765pt;" src="images/eqn-579638A364F763DB16AA52D12484F97E-depth002.93.svg"> to minimize:</p>
+<br><b>Figure .2</b>. Loss function in 3D where the black dot shows the smallest loss, the bottom of the bowl.</span>
+<p class=p_left>The notion of <i>best fit</i> means choosing <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> to minimize the average error, the average difference between the known true <img style="vertical-align: -2.7825pt;" src="images/eqn-4BE66AD2CF5C98540DB20BD7DF0C0413-depth002.65.svg"> values and the model predictions, <img style="vertical-align: -2.7825pt;" src="images/eqn-11477AE3C754D1E3F7950B3DAA7173A8-depth002.65.svg">.  To make things nice mathematically, and to avoid needing an absolute value operator, linear regression optimizes the average (mean) squared error.  That's where the term <i>Ordinary Least Squares</i> (OLS) comes from. The MSE function is a quadratic that always gives us a bowl shaped loss function, for 2 coefficients anyway, as shown in <b>Figure .2</b>.  For all <span class=eqn>n</span> training records <img style="vertical-align: -3.4125pt;" src="images/eqn-4D08776015650D52DEC654178D690689-depth003.25.svg">, we find <img style="vertical-align: -3.0765pt;" src="images/eqn-579638A364F763DB16AA52D12484F97E-depth002.93.svg"> to minimize:</p>
 </div>
 
 <div><img class="blkeqn" src="images/blkeqn-C3AF60FA16AA61331A4349C2BA1F55C3.svg" alt="" width=""></div>
@@ -198,15 +171,15 @@ y_pred [-0.17  0.97  2.1   3.24  4.37  5.51  6.64  7.78  8.91 10.05]
 </center>
 </center>
 
-<br><b>Figure 1.3</b>. Loss function contour projected onto 2D plane, as if we were looking from above.</span>
-<p class=p_left>The loss function goes up as <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> move away from the bottom of the bowl. The big black dot represents the minimum loss location, <img style="vertical-align: -3.4125pt;" src="images/eqn-2F106BCE53B4B8C2EEE6504AA6D750AB-depth003.25.svg"> = (-0.17, 1.022). (See <a href="code/loss3d.py">code/loss3d.py</a> for the code.) Three-dimensional plots are sometimes hard to interpret on a two-dimensional screen, so you will often see the loss function projected down onto the <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> plane, as shown in <b>Figure 1.3</b> (<a href="code/loss2d.py">code/loss2d.py</a>).</p>
+<br><b>Figure .3</b>. Loss function contour projected onto 2D plane, as if we were looking from above.</span>
+<p class=p_left>The loss function goes up as <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> move away from the bottom of the bowl. The big black dot represents the minimum loss location, <img style="vertical-align: -3.4125pt;" src="images/eqn-2F106BCE53B4B8C2EEE6504AA6D750AB-depth003.25.svg"> = (-0.17, 1.022). (See <a href="code/loss3d.py">code/loss3d.py</a> for the code.) Three-dimensional plots are sometimes hard to interpret on a two-dimensional screen, so you will often see the loss function projected down onto the <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg">, <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> plane, as shown in <b>Figure .3</b> (<a href="code/loss2d.py">code/loss2d.py</a>).</p>
 </div>
 
-<p>It's important to see the relationship between <b>Figure 1.1</b> and <b>Figure 1.2</b>. So, just to be clear, shifting <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> in <b>Figure 1.2</b> causes the orange line in <b>Figure 1.1</b> to tilt or move up and down, away from the best fit.</p>
+<p>It's important to see the relationship between <b>Figure .1</b> and <b>Figure .2</b>. So, just to be clear, shifting <img style="vertical-align: -3.0765pt;" src="images/eqn-5AF9E28D609B16EB25693F44EA9D7A8F-depth002.93.svg"> and <img style="vertical-align: -3.0765pt;" src="images/eqn-B4CEEC2C4656F5C1E7FC76C59C4F80F3-depth002.93.svg"> in <b>Figure .2</b> causes the orange line in <b>Figure .1</b> to tilt or move up and down, away from the best fit.</p>
 
 
 
-<h2 id="sec:1.2">1.2 Motivation</h2>
+<h2 id="sec:1.1">1.1 Motivation for regularization</h2>
 
 
 <p>So far so good.  Given some data, we can fit a best fit line through the data where &ldquo;best fit&rdquo; means the line that minimizes the average squared between true <span class=eqn>y</span> values and those predicted by the model. Now, let's tweak the last <span class=eqn>y</span> value to be about 10 times as big: </p>
@@ -264,7 +237,7 @@ y_pred [ 7.02  8.54 10.06 11.58 13.1  14.62 16.14 17.67 19.19 20.71]
 
 
 
-<h2 id="sec:1.3">1.3 The premise and trade-off of regularization</h2>
+<h2 id="sec:1.2">1.2 The premise and trade-off of regularization</h2>
 
 
 <div class="p_wrapper">
