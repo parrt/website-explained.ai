@@ -49,24 +49,29 @@
 	<section>
 		<h1 style="border-bottom: 1px solid #e5e5e5;">Articles</h1>
 	
-		<h2><a href="decision-tree-viz/index.html">How to visualize decision trees</a><br></h2>
+		<h2><a href="regularization/index.html">A visual explanation for regularization of linear models</a><br><font size=1>May 2020</font></h2>
+		
+		<a href="regularization/index.html"><img style="float:left; clear:left; padding: 0px;" src="regularization/images/lagrange-animation.gif" width=210></a>
+		<p>Linear and logistic regression models are important because they are interpretable, fast, and form the basis of deep learning neural networks.  Unfortunately, linear models have a tendency to chase outliers in the training data, which often leads to models that don't generalize well to new data. To produce models that generalize better, we all know to regularize our models. While there are lots of articles on the mechanics of regularized linear models, we've lack a simple and intuitive explanation for what exactly is going on during regularization. The goal of this article is to explain how regularization behaves visually, dispelling some myths and answering important questions along the way.</p>
+
+		<h2><a href="decision-tree-viz/index.html">How to visualize decision trees</a><br><font size=1>October 2018</font></h2>
 		
 		<a href="decision-tree-viz/index.html"><img style="float:left; clear:left; padding: 5px;" src="decision-tree-viz/images/samples/wine-TD-2.svg" width=200></a>
 		<p>(See <a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be">video</a> discussion.) Decision trees are the fundamental building block of gradient boosting machines and Random Forests(tm), probably the two most popular machine learning models for structured data.  Visualizing decision trees is a tremendous aid when learning how these models work and when interpreting models.  Unfortunately, current visualization packages are rudimentary and not immediately helpful to the novice. For example, we couldn't find a library that visualizes how decision nodes split up the feature space.  So, we've created a general package called <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a> for scikit-learn decision tree visualization and model interpretation.</p>
 	
-		<h2><a href="gradient-boosting/index.html">How to explain gradient boosting</a></h2>
+		<h2><a href="gradient-boosting/index.html">How to explain gradient boosting</a><br><font size=1>June 2018</font></h2>
 		
 		<a href="gradient-boosting/index.html"><img style="float:left; clear:left; padding: 5px;" src="gradient-boosting/images/golf-MSE.png" width=200></a>
 		<p>Gradient boosting machines (GBMs) are currently very popular and so it's a good idea for machine learning practitioners to understand how GBMs work. The problem is that understanding all of the mathematical machinery is tricky and, unfortunately, these details are needed to tune the hyper-parameters. (Tuning the hyper-parameters is required to get a decent GBM model unlike, say, Random Forests.) Our goal in this article is to explain the intuition behind gradient boosting, provide visualizations for model construction, explain the mathematics as simply as possible, and answer thorny questions such as why GBM is performing &ldquo;gradient descent in function space.&rdquo;</p>
 	
-		<h2><a href="matrix-calculus/index.html">The Matrix Calculus You Need For Deep Learning</a></h2>
+		<h2><a href="matrix-calculus/index.html">The Matrix Calculus You Need For Deep Learning</a><br><font size=1>February 2018</font></h2>
 
 
 		<a href="matrix-calculus/index.html"><img style="float:left; clear:left; padding: 5px;"  src="matrix-calculus/images/neuron.png" width=200></a>
 			<p>This article explains all of the matrix calculus you need in order to understand the training of deep neural networks. Most of us last saw calculus in school, but derivatives are a critical part of machine learning, particularly deep neural networks, which are trained by optimizing a loss function. Pick up a machine learning paper or the documentation of a library such as PyTorch and calculus comes screeching back into your life like distant relatives around the holidays. And it's not just any old scalar calculus that pops up--you need differential matrix calculus, the shotgun wedding of linear algebra and multivariate calculus. (<a href="https://arxiv.org/abs/1802.01528">printable PDF at arxiv.org</a>)</p>
 			
 
-		<h2><a href="rf-importance/index.html">Beware Default Random Forest Importances</a></h2>
+		<h2><a href="rf-importance/index.html">Beware Default Random Forest Importances</a><br><font size=1>March 2018</font></h2>
 		
 		<a href="rf-importance/index.html"><img style="float:left; clear:left; padding: 5px;"  src="rf-importance/images/cls_dflt_random_annotated.png" width=200></a>
 		<p>Training a model that accurately predicts outcomes is great, but most of the time you don't just need predictions, you want to be able to interpret your model. The problem is that the scikit-learn Random Forest feature importance and R's default Random Forest feature importance strategies are biased. To get reliable results in Python, use permutation importance, provided here and in our <a href="https://github.com/parrt/random-forest-importances">rfpimp</a> package (via pip). For R, use importance=T in the Random Forest constructor then type=1 in R's importance() function. </p>
@@ -84,22 +89,21 @@
 
 		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Academic papers</h1>
 
-		<h2><a href="https://arxiv.org/abs/1907.06698">Partial Dependence through Stratification</a><br></h2>
+		<h2><a href="https://arxiv.org/abs/1907.06698">Partial Dependence through Stratification</a><br><font size=1>July 2019</font></h2>
 		<a href="https://arxiv.org/abs/1907.06698"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/stratx/raw/master/images/bulldozer_YearMade_stratpd.png" width=200></a>
 		<p>Partial dependence curves (FPD) introduced by Friedman, are an important model interpretation tool, but are often not accessible to business analysts and scientists who typically lack the skills to choose, tune, and assess machine learning models. It is also common for the same partial dependence algorithm on the same data to give meaningfully different curves for different models, which calls into question their precision. Expertise is required to distinguish between model artifacts and true relationships in the data.  In this paper, we contribute methods for computing partial dependence curves, for both numerical (StratPD) and categorical explanatory variables (CatStratPD), that work directly from training data rather than predictions of a model. Our methods provide a direct estimate of partial dependence, and rely on approximating the partial derivative of an unknown regression function without first fitting a model and then approximating its partial derivative. We investigate settings where contemporary partial dependence methods--including FPD, ALE, and SHAP methods--give biased results. Furthermore, we demonstrate that our approach works correctly on synthetic and plausibly on real data sets. Our goal is not to argue that model-based techniques are not useful. Rather, we hope to open a new line of inquiry into nonparametric partial dependence. <a href="https://github.com/parrt/stratx">Complete source code repo</a> is available and you can "<tt>pip install stratx</tt>".</p>
 
-		<h2><a href="http://www.antlr.org/papers/codebuff.pdf">Towards a Universal Code Formatter through Machine Learning</a></h2>
+		<h2><a href="http://www.antlr.org/papers/codebuff.pdf">Towards a Universal Code Formatter through Machine Learning</a><br><font size=1>October 2016</font></h2>
 		
 		<a href="http://www.antlr.org/papers/codebuff.pdf"><img style="float:left; clear:left; padding: 5px;"  src="images/codebuff-tree.png" width=200></a>
 		<p>This academic paper describes a tool called <a href="https://github.com/antlr/codebuff">CodeBuff</a> (github repo) that automatically derives code formatters for any given programming language without intervention from a language expert, abstracting the formatting rules from a representative corpus. CodeBuff illustrates how even the simplest machine learning model, <i>k</i>-nearest neighbor in this case, can perform very well given sufficiently rich features.</p>
 
 		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Videos</h1>
 
-		<h2 style="margin:0 0 0px;"><a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be">The visual interpretation of decision trees</a></h2>
+		<h2 style="margin:0 0 0px;"><a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be">The visual interpretation of decision trees</a><br><font size=1>November 2018</font></h2>
 
 		<a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be"><img style="float:left; clear:left; padding: 8px;" src="images/dtreeviz-parrt.png" width=200></a>
 		<p><b>Subtitle</b>: How to lead a fulfilling life by being dissatisfied.
-		<br>November 30, 2018
 		<p>This video is a lecture from the <a href="https://www.meetup.com/USF-Seminar-Series-in-Data-Science">USF seminar series in data science</a>, describing the article <a href="https://explained.ai/decision-tree-viz/index.html">How to visualize decision trees</a> and Python package <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a>.
 		<p>I finish up the lecture with some advice about how dissatisfaction can spur innovation.
 
