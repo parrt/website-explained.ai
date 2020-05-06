@@ -70,6 +70,8 @@
 
 <p>If both L1 and L2 regularization work well, you might be wondering why we need both. It turns out they have different but equally useful properties. From a practical standpoint, L1 tends to shrink coefficients to zero whereas L2 tends to shrink coefficients evenly. L1 is therefore useful for feature selection, as we can drop any variables associated with coefficients that go to zero. L2, on the other hand, is useful when you have collinear/codependent features. (An example pair of codependent features is <span class=inlinecode>gender</span> and <span class=inlinecode>ispregnant</span> since, at the current level of medical technology, only females can be <span class=inlinecode>ispregnant</span>.) Codependence tends to increase coefficient variance, making coefficients unreliable/unstable, which hurts model  generality. L2 reduces the variance of these estimates, which counteracts the effect of codependencies.</p>
 
+<p>(The <a href="https://github.com/parrt/website-explained.ai/tree/master/regularization/code">code to generate all images</a> is available.)</p>
+
 
 
 <h2 id="sec:3.1">3.1 L1 regularization encourages zero coefficients</h2>
