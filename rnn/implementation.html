@@ -576,7 +576,7 @@ optimizer.step()</div>
 
 <p>where <span class=inlinecode>optimizer</span> is an <span class=inlinecode>Adam</span> or <span class=inlinecode>RMSProp</span> optimizer,  for example.</p>
 
-<p>At this point, we've created an RNN that uses SGD to update <span class=eqn>W</span>, <span class=eqn>U</span>, <span class=eqn>V</span> after each input record.  You can check out the full implementation in the <a href="notebooks/SGD.ipynb">SGD notebook</a>.  What we have is a good training procedure, but is very inefficient because computing the partial derivatives during back propagation is very expensive, and we do it after each record. To improve performance without sacrificing much in training accuracy, we can train a small batch of records before updating the matrices. That's called <i>minibatch</i> SGD, and is the subject of the <a href="minibatch.html">next section</a>.</p>
+<p>At this point, we've created an RNN that uses SGD to update <span class=eqn>W</span>, <span class=eqn>U</span>, <span class=eqn>V</span> after each input record.  You can check out the full implementation in the <a href="https://github.com/parrt/ml-articles/blob/master/rnn/notebooks/SGD.ipynb">SGD notebook</a>.  What we have is a good training procedure, but is very inefficient because computing the partial derivatives during back propagation is very expensive, and we do it after each record. To improve performance without sacrificing much in training accuracy, we can train a small batch of records before updating the matrices. That's called <i>minibatch</i> SGD, and is the subject of the <a href="minibatch.html">next section</a>.</p>
 
 
 
