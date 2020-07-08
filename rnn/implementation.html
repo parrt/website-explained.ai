@@ -478,7 +478,7 @@ There is a bit of confusion surrounding the term CBOW from what I can tell readi
         h = torch.tanh(h) # NONLINEARITY, contrains h values to -1..1</div>
 
 
-<p>(The fastai book uses <span class=inlinecode>relu</span> not <span class=inlinecode>tanh</span> but that caused my <span class=inlinecode>h</span> vectors to explode in magnitude. I attribute this to a lack of L2 weight decay regularization in my training loop. Karpathy's snippet also uses <span class=inlinecode>tanh</span>.)</p>
+<p>(The fastai book uses <span class=inlinecode>relu</span> not <span class=inlinecode>tanh</span> but that caused my <span class=inlinecode>h</span> vectors to  explode in magnitude. I don't think it has anything to do with exploding gradients because I'm under the impression that <span class=inlinecode>tanh</span> suffers from vanishing gradients not exploding. I guess this due to a lack of L2 weight decay regularization in my training loop. Karpathy's snippet also uses <span class=inlinecode>tanh</span>.)</p>
 
 
 
