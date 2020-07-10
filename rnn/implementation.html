@@ -449,7 +449,7 @@ for x in ["cat,"chat","katze"]:
 </tbody>
 </table>
 </center>
-<p>(Matrices <span class=eqn>W</span>, <span class=eqn>U</span> are called <span class=eqn>W<sub>hh</sub></span>, <span class=eqn>W<sub>xh</sub></span> in Karpathy's article and <span class=inlinecode>h_h</span>, <span class=inlinecode>i_h</span> in Chapter 12 of the fastai book.)</p>
+<p>(Matrices <span class=eqn>W</span>, <span class=eqn>U</span> are called <span class=eqn>W<sub>hh</sub></span>, <span class=eqn>W<sub>xh</sub></span> in Karpathy's article and <span class=inlinecode>h_h</span>, <span class=inlinecode>i_h</span> in Section &ldquo;Our Language Model in PyTorch&rdquo; of <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">Chapter 12 in the fastai book</a>.)</p>
 
 <p>By transforming <span class=eqn>x<sub>t</sub></span>'s one hot vector into a smaller dense vector using <span class=eqn>U</span>, the <span class=eqn>W</span> matrix can be as small or big as we want. The cool thing is that the <span class=eqn>U</span> matrix acts like an embedding layer for a neural network. Multiplying <span class=eqn>U</span> times the <span class=eqn>x<sub>t</sub></span>'s one hot vector effectively selects a column from <span class=eqn>U</span>. So, the columns of <span class=eqn>U</span> are the character vector embeddings after we train a model containing this <span class=inlinecode>h</span> update equation.</p>
 
@@ -478,7 +478,7 @@ There is a bit of confusion surrounding the term CBOW from what I can tell readi
         h = torch.tanh(h) # NONLINEARITY, contrains h values to -1..1</div>
 
 
-<p>(The fastai book uses <span class=inlinecode>relu</span> not <span class=inlinecode>tanh</span> but that caused my <span class=inlinecode>h</span> vectors to  explode in magnitude. I don't think it has anything to do with exploding gradients because I'm under the impression that <span class=inlinecode>tanh</span> suffers from vanishing gradients not exploding. I guess this due to a lack of L2 weight decay regularization in my training loop. Karpathy's snippet also uses <span class=inlinecode>tanh</span>.)</p>
+<p>(The <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">fastai book</a> uses <span class=inlinecode>relu</span> not <span class=inlinecode>tanh</span>, such as in <span class=inlinecode>LMModel1</span> of Section &ldquo;Our Language Model in PyTorch&rdquo;, but that caused my <span class=inlinecode>h</span> vectors to explode in magnitude. I don't think it has anything to do with exploding gradients because I'm under the impression that <span class=inlinecode>tanh</span> suffers from vanishing gradients not exploding. I guess this due to a lack of L2 weight decay regularization in my training loop. Karpathy's snippet also uses <span class=inlinecode>tanh</span>.)</p>
 
 
 
@@ -487,7 +487,7 @@ There is a bit of confusion surrounding the term CBOW from what I can tell readi
 
 <p>The <span class=inlinecode>h</span> computed by the inner loop yields an embedding vector for each word, computed from the sequence of character one hot vectors for that word. That is just a representation of a word, which we could use in a random forest or any other classifier to make predictions (given suitable <span class=eqn>W</span> and <span class=eqn>U</span>).  To learn the values in <span class=eqn>W</span> and <span class=eqn>U</span>, though, we have to make the matrices part of a classifier model. Given a suitable loss function, we can tweak the values of <span class=eqn>W</span> and <span class=eqn>U</span> in the direction of lower loss, yielding more and more accurate predictions.</p>
 
-<p>To make a prediction from word vector <span class=inlinecode>h</span>, we again use a matrix transformation that represents either a final linear layer of a neural network or a multi-class logistic regressor, depending on your preference. We transform <span class=inlinecode>h</span> to a vector of length 3 because there are 3 target languages: English, French, and German. We'll use a new matrix, <span class=eqn>V</span>, to transform the final <span class=inlinecode>h</span> to the output of our classifier model. The last two lines of this code snippet represent the classifier:</p>
+<p>To make a prediction from word vector <span class=inlinecode>h</span>, we again use a matrix transformation that represents either a final linear layer of a neural network or a multi-class logistic regressor, depending on your preference. We transform <span class=inlinecode>h</span> to a vector of length 3 because there are 3 target languages: English, French, and German. We'll use a new matrix, <span class=eqn>V</span>, to transform the final <span class=inlinecode>h</span> to the output of our classifier model. (<a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">Chapter 12 in the fastai book</a> uses <span class=inlinecode>h_o</span> instead of <span class=eqn>V</span> and Karpathy uses matrix variable <span class=inlinecode>Why</span>.) The last two lines of this code snippet represent the classifier:</p>
 <center>
 <table style="">
 <thead>
@@ -528,7 +528,7 @@ for x in ["cat,"chat","katze"]:
 </tbody>
 </table>
 </center>
-<p>(This code corresponds to models <span class=inlinecode>RNN</span> in Karpathy <span class=inlinecode>LMModel2</span> in chapter 12 of the fastai book.)</p>
+<p>(This code corresponds to models <span class=inlinecode>RNN</span> in Karpathy and <span class=inlinecode>LMModel2</span> in Section &ldquo;Our First Recurrent Neural Network&rdquo; of <a href="https://github.com/fastai/fastbook/blob/master/12_nlp_dive.ipynb">Chapter 12 in the fastai book</a>.)</p>
 <div class=aside><b>Simplifications made in this code</b><br>
 Some readers will notice that I'm not using any bias vectors in this code, which are typically included in neural network layers and logistic regression models. It turns out to work pretty well without them for this application and simplifies the code a lot.
 <p>	We also should shuffle the <span class=inlinecode>X</span> training data rather than go through it in the same order each epoch.</p>
