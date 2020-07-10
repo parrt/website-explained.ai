@@ -18,7 +18,7 @@
 <!-- LinkedIn meta -->
 <meta property='og:title' content="Explaining RNNs without neural networks"/>
 <meta property='og:image' content="http://explained.ai/rnn/images/vid-fast.gif">
-<meta property='og:description' content=""/>
+<meta property='og:description' content="This article explains how recurrent neural networks (RNN's) work without using the neural network metaphor. It uses a visually-focused data-transformation perspective to show how RNNs encode variable-length input vectors as fixed-length embeddings."/>
 <meta property='og:url' content="http://explained.ai/rnn/index.html"/>
 
 <!-- Facebook meta -->
@@ -29,7 +29,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@the_antlr_guy">
 <meta name="twitter:creator" content="@the_antlr_guy">
-<meta name="twitter:description" content="">
+<meta name="twitter:description" content="This article explains how recurrent neural networks (RNN's) work without using the neural network metaphor. It uses a visually-focused data-transformation perspective to show how RNNs encode variable-length input vectors as fixed-length embeddings.">
 <meta name="twitter:image" content="http://explained.ai/rnn/images/vid-fast.gif">
 <!-- END META -->
 </head>
@@ -76,14 +76,12 @@
 <h2 id="sec:2.1">2.1 Computing loss using more than one input record</h2>
 
 
-<p>If computing partial derivatives is expensive, we want to avoid doing it after computing the <span class=inlinecode>h</span> vector for each word. The subset of input records we use to compute the loss is called a <i>minibatch</i>.  The size of the minibatch is a knob we can turn: the larger the batches, the more accurate our partial derivative estimates, but our validation loss is likely to be higher. Here's a fun tweet and link to supporting evidence from LeCun:</p>
-
 <p>	<center>
 <a href="https://twitter.com/ylecun/status/989610208497360896">
-<img src="images/lecunn-batch-size.png" width="30%" url="https://twitter.com/ylecun/status/989610208497360896">
+<img src="images/lecunn-batch-size.png" width="30%" align="right" url="https://twitter.com/ylecun/status/989610208497360896">
 </a>
 </center>
-</p>
+If computing partial derivatives is expensive, we want to avoid doing it after computing the <span class=inlinecode>h</span> vector for each word. The subset of input records we use to compute the loss is called a <i>minibatch</i>.  The size of the minibatch is a knob we can turn: the larger the batches, the more accurate our partial derivative estimates, but our validation loss is likely to be higher. On the right is a fun tweet and link to supporting evidence from LeCun.</p>
 
 <p>To see how minibatching works, let's add <i>kat</i>, the Afrikaans word, to our classification problem so we have two batches of size two (the character vocabulary is the same):</p>
 
@@ -94,7 +92,7 @@
 </center>
 </p>
 
-<p>	To process records in batches instead of one at a time, we need a triply-nested loop instead of a doubly-nested loop. Previously we had an outer loop that iterated through each training record and an inner loop that processed the characters of a word. We still have the same inner loop, but we need to split the outer loop into one that advances from batch to batch and a nested loop that iterates through each batch:</p>
+<p>	To process records in batches instead of one at a time, we need a triply-nested loop instead of a doubly-nested loop. Previously we had an outer loop that iterated through each training record and an inner loop that processed the characters of a word. We still have the same inner loop, but we need to split the outer loop into one that advances from batch to batch and a nested loop that iterates through the words of each batch:</p>
 <center>
 <table style="">
 <thead>
@@ -133,9 +131,9 @@
 </center>
 <p>(Of course, the real implementation would require yet another outer loop to iterate over multiple epochs.)</p>
 
-<p>I've highlighted the inner loop, which is identical for both cases and I have circled the key difference in the loss computation. Instead of computing a single loss for a single <span class=inlinecode>h</span> vector, we are summing up the losses for a batch of <span class=inlinecode>h</span> vectors.  </p>
+<p>I've highlighted the inner loop, which is identical for both cases and I have circled the key difference in the loss computation. Instead of computing a single loss for a single <span class=inlinecode>h</span> vector, we are summing up the losses obtained from multiple <span class=inlinecode>h</span> vectors. (Note that, at any one time, we have at most one <span class=inlinecode>h</span> vector in play.)</p>
 
-<p>The effect of minibatching is to delay updating the matrices representing the parameters of our model until after we've seen more than a single input record. This gives us a more accurate gradient and is a little more efficient because were not computing gradients for every input record. Because the gradient is more accurate, we can often afford (and often need) a higher learning rate than the one we use for single record gradient descent. You can check out the full implementation in the <a href="https://github.com/parrt/ml-articles/blob/master/rnn/notebooks/minibatch.ipynb">minibatch SGD notebook</a>.  </p>
+<p>The effect of minibatching is to delay updating the matrices representing the parameters of our model until after we've seen more than a single input record. This gives us a more accurate gradient and is a little more efficient because were not computing gradients for every input record. Because the gradient is more accurate, we can often afford (and often need) a higher learning rate than the one we use for single record gradient descent. You can check out the full implementation in the <a href="https://colab.research.google.com/github/parrt/ml-articles/blob/master/rnn/notebooks/minibatch.ipynb">minibatch SGD notebook</a>.  </p>
 
 <p>Reducing how often we compute partial derivatives increases training speed, but the biggest speed bump comes from converting the loop that iterates through a batch into vector operations.</p>
 
@@ -162,7 +160,7 @@
 </center>
 </p>
 
-<p>We've been processing the input word by word, even in the batched non-vectorized case. Graphically, that means we process from left to right all of the computations for <i>cat</i> then move onto the next word, <i>chat</i> etc... This makes sense because there is a dependency between the partial <span class=inlinecode>h</span>  results. Recall that our recurrence relation associated with the RNN is <img style="vertical-align: -2.8455pt;" src="images/eqn-F224DE1728AA3CC4724E5AE9C5429D65-depth002.71.svg"> and then we run the last <span class=eqn>h</span> into <img style="vertical-align: -0.5pt;" src="images/eqn-80D29D02FAD95C4A1D659564BE6CA9B4-depth000.22.svg"> to get the output vector holding the predicted probabilities of the target languages. Here's a depiction of the dependencies for the <i>cat</i> computations:	</p>
+<p>We've been processing the input word by word, even in the batched non-vectorized case. Graphically, that means we process from left to right all of the computations for <i>cat</i> then move onto the next word, <i>chat</i>, etc... This makes sense because there is a dependency between the partial <span class=inlinecode>h</span>  results. Recall that the recurrence relation associated with the RNN is <img style="vertical-align: -2.8455pt;" src="images/eqn-F224DE1728AA3CC4724E5AE9C5429D65-depth002.71.svg"> and then we run the last <span class=eqn>h</span> into <img style="vertical-align: -0.5pt;" src="images/eqn-80D29D02FAD95C4A1D659564BE6CA9B4-depth000.22.svg"> to get the output vector holding the predicted probabilities of the target languages. Here's a depiction of the dependencies for the <i>cat</i> computations:	</p>
 
 <p><center>
 <a href="images/computation-depends.svg">
@@ -171,7 +169,7 @@
 </center>
 </p>
 
-<p>To get the right answer for each word, that means computation must proceed left to right, one <span class=eqn>h</span> computation after the other.  That dependency, however, only exists within a word between time <img style="vertical-align: -1.08pt;" src="images/eqn-F3E90CE87A25538F5A4BE79A0A7C0FA5-depth001.08.svg"> and <span class=eqn>t</span>. So, we are free to process all words within a batch simultaneously, as long as we respect the time dependency. In other words, we process all characters at the same time position, <span class=eqn>t</span>, simultaneously for all words in the batch. Here's the first batch of computations again, this time with blue boxes around the computations at time <span class=eqn>t</span> and dashed arrows indicating the sequence of operations:</p>
+<p>To get the right answer for each word, that computation must proceed left to right, one <span class=eqn>h</span> computation after the other.  That dependency, however, only exists within a word between time <img style="vertical-align: -1.08pt;" src="images/eqn-F3E90CE87A25538F5A4BE79A0A7C0FA5-depth001.08.svg"> and <span class=eqn>t</span>. So, we are free to process all words within a batch simultaneously, as long as we respect the time dependency. In other words, we can process all characters at the same time position, <span class=eqn>t</span>, simultaneously for all words in the batch. Here's the first batch of computations again, this time with blue boxes around the computations at time <span class=eqn>t</span> and dashed arrows indicating the sequence of operations:</p>
 
 <p><center>
 <a href="images/computation-batch1-vector.svg">
@@ -204,7 +202,7 @@
 <p>The resulting matrix  has columns <span class=eqn>Wa</span>, <span class=eqn>Wb</span>, and <span class=eqn>Wc</span>.</p>
 
 </div>
-<p>The RNN model with <span class=inlinecode>H</span> as a matrix and batch input matrix <span class=inlinecode>B</span> looks like this:</p>
+<p>The RNN model with matrix <span class=inlinecode>H</span> and batch input matrix <span class=inlinecode>B</span> looks like this:</p>
 
 <p><center>
 <a href="images/equation-vec-W-U-V.svg">
@@ -312,7 +310,7 @@
 </center>
 </p>
 
-<p>The most convenient single entity that aggregates all of those vectors is a three-dimensional matrix. Each row will represent a word, each column will represent a character, and the final dimension (going into the screen) will represent the one-hot encoding. To create that matrix, flip the column one-hot vectors representing characters so they are going back into the screen, then stack them up, one on top of the other. Because the words are of different length, and tensors all need to have the same length, we need to pad missing characters with zero one-hot vectors up to the max word length. The result is the right-padded 3-D matrix you see here on the left:</p>
+<p>The most convenient single entity that aggregates all of those vectors is a three-dimensional matrix. Each row will represent a word, each column will represent a character, and the final dimension (going into the screen) will represent the one-hot encoding. To create that matrix, flip the column one-hot vectors representing characters so they are going back into the screen, then stack them up, one on top of the other. Because the words are of different length, and tensors all need to have the same length, we need to pad missing characters with zero one-hot vectors up to the max word length. The result is the right-padded 3D matrix you see here on the left:</p>
 
 <p>	</p>
 <center>
@@ -351,13 +349,13 @@
 </tbody>
 </table>
 </center>
-<p>Unfortunately padding on the right screws up our computation. To see how, let's look at the recurrence relation for a single one-hot vector again, ignoring the nonlinearity as is not relevant to this padding discussion:</p>
+<p>Unfortunately padding on the right screws up our computation. To see how, let's look at the recurrence relation for a single one-hot vector again, ignoring the nonlinearity as it's not relevant to this padding discussion:</p>
 
 <div><img class="blkeqn" src="images/blkeqn-F224DE1728AA3CC4724E5AE9C5429D65.svg" alt="" width="" url="images/blkeqn-F224DE1728AA3CC4724E5AE9C5429D65.svg"></div>
 
-<p>After the final letter in <i>cat</i>, my initial reaction was that <span class=eqn>x<sub>t</sub></span> as the zero vector would not alter the <span class=eqn>h<sub>t</sub></span> vector, so padding on the right wouldn't be a problem. It turns out that's not correct. If we make <img style="vertical-align: -2.0475pt;" src="images/eqn-02D39FB1D0491A68BF66D3609C171DE7-depth001.95.svg"> and <img style="vertical-align: -2.1944997pt;" src="images/eqn-407DD06C43056B35E7A1FCA2F47C8716-depth002.09.svg"> zero vectors, the recurrence relation ends up applying <span class=eqn>W</span> to <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> twice, but we want <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> to stay the same at steps 4 and 4.  Notice that <img style="vertical-align: -2.0475pt;" src="images/eqn-0E72DDA469B0E69153F2D21C1339B86B-depth001.95.svg"> would not be the same thing as <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg">:</p>
+<p>After the final letter in <i>cat</i>, my initial reaction was that <span class=eqn>x<sub>t</sub></span> as the zero vector would not alter the <span class=eqn>h<sub>t</sub></span> vector, so padding on the right wouldn't be a problem. It turns out that's not correct. If we make <img style="vertical-align: -2.0475pt;" src="images/eqn-02D39FB1D0491A68BF66D3609C171DE7-depth001.95.svg"> and <img style="vertical-align: -2.1944997pt;" src="images/eqn-407DD06C43056B35E7A1FCA2F47C8716-depth002.09.svg"> zero vectors, the recurrence relation ends up applying <span class=eqn>W</span> to <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> two extra times, but we want <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> to stay the same at steps 4 and 5.  Notice that <img style="vertical-align: -2.0475pt;" src="images/eqn-0E72DDA469B0E69153F2D21C1339B86B-depth001.95.svg"> would not be the same thing as <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg">:</p>
 
-<div><img class="blkeqn" src="images/blkeqn-CE0477A53EF4CBAD5CECD7C146255F02.svg" alt="" width="" url="images/blkeqn-CE0477A53EF4CBAD5CECD7C146255F02.svg"></div>
+<div><img class="blkeqn" src="images/blkeqn-5A5F8EB9D300B74D534B84E4D06B18D7.svg" alt="" width="" url="images/blkeqn-5A5F8EB9D300B74D534B84E4D06B18D7.svg"></div>
 
 <p>The way around this  is simple but looks weird: we left pad the matrix instead of right padding. See the diagram above on the right.  This is how left padding affects the recurrence relation for <i>cat</i>:</p>
 
@@ -371,11 +369,11 @@
 <div class="codeblk">x_step_t = batch_X[:,t].T # make it len(vocab) x batch_size</div>
 
 
-<p>The <span class=inlinecode>:</span> in <span class=inlinecode>batch_X[:,t]</span> spans all words in the batch and the <span class=inlinecode>t</span> refers to the step. So, this gives us all characters at step <span class=inlinecode>t</span> across all words. Since we did not mention the third dimension, the one-hot vector dimension, we get the entire one-hot vector for each character position. The resulting 2D matrix has dimensions batch size by vocabulary length, which means that the one-hot vectors are horizontal not vertical.  For the matrix algebra to work out, we need those one-hot vectors within the matrix to be vertical as we've done in the past. That's why we take the need the transpose, <span class=inlinecode>batch_X[:,t].T</span>.</p>
+<p>The <span class=inlinecode>:</span> in <span class=inlinecode>batch_X[:,t]</span> spans all words in the batch and the <span class=inlinecode>t</span> refers to the step. So, this gives us all characters at step <span class=inlinecode>t</span> across all words. Since we did not mention the third dimension, the one-hot vector dimension, we get the entire one-hot vector for each character position. The resulting 2D matrix has dimensions <span class=inlinecode>batch_size</span> by <span class=inlinecode>len(vocab)</span>, which means that the one-hot vectors are horizontal not vertical.  For the matrix algebra to work out, we need those one-hot vectors within the matrix to be vertical as we've done in the past. That's why we take the need the transpose, <span class=inlinecode>batch_X[:,t].T</span>.</p>
 
 <p>And there you have it. Those are all the details I had to figure out in order to implement an efficient RNN using matrices instead of neural network layers as raw components.  Our initial  non-vectorized SGD training loop, which updated model parameters after computing loss for each word, encompasses all of the RNN key ideas. For a realistic RNN, however, only the vectorized version is fast enough. The vectorized version requires minibatching and  all of the machinery required to get the 3D padded batch matrix set up properly. As usual, the theory is straightforward but actually building a practical RNN requires a much deeper understanding of the details. </p>
 
-<p>You can check out the full implementation in the <a href="https://github.com/parrt/ml-articles/blob/master/rnn/notebooks/vectorized.ipynb">vectorized minibatch SGD notebook</a> and the similar <a href="https://github.com/parrt/ml-articles/blob/master/rnn/notebooks/gpu.ipynb">GPU-enabled vectorized minibatch SGD notebook</a>.</p>
+<p>You can check out the full implementation in the <a href="https://colab.research.google.com/github/parrt/ml-articles/blob/master/rnn/notebooks/vectorized.ipynb">vectorized minibatch SGD notebook</a> and the similar <a href="https://colab.research.google.com/github/parrt/ml-articles/blob/master/rnn/notebooks/gpu.ipynb">GPU-enabled vectorized minibatch SGD notebook</a>.</p>
 
 
 
