@@ -426,7 +426,7 @@ for x in ["cat,"chat","katze"]:
 <td valign=top align="left">
 
 <div class="codeblk">nhidden=4; nfeatures=len(vocab)
-W = torch.eye(nhidden, nhidden)
+W = torch.eye(nhidden,   nhidden)
 U = torch.randn(nhidden, nfeatures)
 for x in ["cat,"chat","katze"]:
     h = torch.zeros(nhidden, 1)
@@ -500,8 +500,8 @@ There is a bit of confusion surrounding the term CBOW from what I can tell readi
 <td valign=top align="left">
 
 <div class="codeblk">nhidden=4; nfeatures=len(vocab); nclasses=3
-W = torch.eye(nhidden, nhidden)
-U = torch.randn(nhidden, nfeatures)
+W = torch.eye(nhidden,    nhidden)
+U = torch.randn(nhidden,  nfeatures)
 V = torch.randn(nclasses, nhidden)
 for x in ["cat,"chat","katze"]:
    h = torch.zeros(nhidden, 1)
