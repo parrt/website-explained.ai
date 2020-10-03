@@ -53,13 +53,17 @@
 <ul>
 	<li><a href="#sec:1.1">Isolating issues in tensor code is maddening!</a>
 	<ul>
+			<li><a href="#sec:1.1.1">Debugging a simple linear layer</a></li>
+			<li><a href="#sec:1.1.2">Debugging a complex tensor expression</a></li>
+			<li><a href="#sec:1.1.3">Clarifying exceptions triggered within prebuilt layers</a></li>
+
 	</ul>
 	</li>
 	<li><a href="#sec:1.2">Clarifying deeply-buried tensor code</a>
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:1.3">Visualizing tensors with a variety of dimensions</a>
+	<li><a href="#sec:1.3">Visualizing tensor code without triggering exceptions</a>
 	<ul>
 	</ul>
 	</li>
@@ -92,6 +96,11 @@
 
 
 <p>Even for experts, it can be hard to quickly identify the cause of an exception in a line of Python code performing tensor operations.  The debugging process usually involves adding a print statement in front of the offending line to emit the shape of each tensor operand.  That works but requires editing the code to create the debugging statement and rerunning the training process. Or, we can manually click or type commands to request all operand shapes using an interactive debugger. (This can be less practical in an IDE like PyCharm where executing code in debug mode is much slower.)</p>
+
+
+
+<h3 id="sec:1.1.1">1.1.1 Debugging a simple linear layer</h3>
+
 
 <p>Let's look at a simple tensor computation to illustrate the less-than-optimal information provided by the default exception message. Consider the following simple NumPy implementation for a hardcoded single (linear) network layer that contains a tensor dimension error.</p>
 
@@ -192,22 +201,27 @@ Cause: @ on tensor operand W w/shape (764, 100) and operand tf.transpose(X) w/sh
 
 <p>You might be wondering, though, why tensor libraries don't generate a more helpful exception message that identified the names of the Python variables involved in the offending subexpression.  It's not that the library authors simply didn't bother. The fundamental issue is that Python tensor libraries are wrappers around extremely efficient cores written in C or C++. Python passes, say, the data for two tensors to a C++ function, but not the associated tensor variable names in Python space. An exception caught deep in C++ has no access to the local and global variable spaces in Python, so it just throws a generic exception back over the fence.  Because Python traps exceptions at the statement level, it also cannot isolate the subexpression within the statement.  (To learn how TensorSensor manages to generate such specific messages, check out the section below.)</p>
 
-<p>This lack of specificity makes it hard to identify bad subexpressions within more complicated statements that contain lots of operators. For example, here's a statement pulled from the guts of a Gated Recurrent Unit (GRU) implementation:</p>
+
+
+<h3 id="sec:1.1.2">1.1.2 Debugging a complex tensor expression</h3>
+
+
+<p>That lack of specificity makes it hard to identify bad subexpressions within more complicated statements that contain lots of operators. For example, here's a statement pulled from the guts of a Gated Recurrent Unit (GRU) implementation:</p>
 
 
 <div class="codeblk">h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)</div>
 
 
-<p>It doesn't matter what it's computing or what the variables represent, just that they are tensor variables. The point is that there are two matrix multiplications, two vector additions, and even a vector element-wise modification (<span class=inlinecode>r*h</span>).  Without augmented error messages or visualizations we wouldn't know which operator and operands caused an exception. To demonstrate how TensorSensor clarifies exceptions in this case, we need to give some fake definitions for the variables used in the statement (the assignment to <span class=inlinecode>h_</span>):</p>
+<p>It doesn't matter what it's computing or what the variables represent, just that they are tensor variables. There are two matrix multiplications, two vector additions, and even a vector element-wise modification (<span class=inlinecode>r*h</span>).  Without augmented error messages or visualizations we wouldn't know which operator and operands caused an exception. To demonstrate how TensorSensor clarifies exceptions in this case, we need to give some fake definitions for the variables used in the statement (the assignment to <span class=inlinecode>h_</span>) to get executable code:</p>
 
 
 <div class="codeblk">nhidden = 256
-Whh_ = torch.eye(nhidden, nhidden)
+Whh_ = torch.eye(nhidden, nhidden)  # Identity matrix
 Uxh_ = torch.randn(d, nhidden)
 bh_  = torch.zeros(nhidden, 1)
-h = torch.randn(nhidden, 1)  # fake previous hidden state h
-r = torch.randn(nhidden, 1)  # fake this computation
-X = torch.rand(n,d)          # fake input
+h = torch.randn(nhidden, 1)         # fake previous hidden state h
+r = torch.randn(nhidden, 1)         # fake this computation
+X = torch.rand(n,d)                 # fake input
 
 with tsensor.clarify():
     h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)</div>
@@ -215,7 +229,7 @@ with tsensor.clarify():
 
 <p>Again, you can ignore the actual computation performed by the code to focus on the shape of the tensor variables.  </p>
 
-<p>For most of us, it's impossible to identify the problem just by looking at the tensor dimensions and the tensor code.  The default exception message is helpful of course, but most of us will still struggle to identify the problem.  Here are the key bits of the default exception message:</p>
+<p>For most of us, it's impossible to identify the problem just by looking at the tensor dimensions and the tensor code.  The default exception message is helpful of course, but most of us will still struggle to identify the problem.  Here are the key bits of the default exception message (note the less-than-helpful reference to the C++ code):</p>
 
 <p>
 <div class=exception>---> 10     h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)
@@ -225,12 +239,8 @@ RuntimeError: size mismatch, m1: [764 x 256], m2: [764 x 200] at /tmp/pip-req-bu
 
 <p>What we need to know is which operator and operands failed, then we can look at the dimensions to identify the problem.  Here is TensorSensor's visualization and augmented exception message:</p>
 
-<p><center>
-<a href="images/torch-gru.svg">
-<img src="images/torch-gru.svg" width="55%" url="images/torch-gru.svg">
-</a>
-</center>
-
+<p>
+	<img src="images/torch-gru.svg" width="55%">
 <div class=exception>---> 10 h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)
 RuntimeError: size mismatch, m1: [764 x 256], m2: [764 x 200] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
 Cause: @ on tensor operand Uxh_ w/shape [764, 256] and operand X.T w/shape [764, 200]
@@ -243,58 +253,12 @@ Cause: @ on tensor operand Uxh_ w/shape [764, 256] and operand X.T w/shape [764,
 <div class="codeblk">Uxh_ = torch.randn(nhidden, d)</div>
 
 
+<p>At this point, we've only used our own tensor computations specified directly within the <span class=inlinecode>with</span> code block. What about exceptions triggered within a tensor library's prebuilt network layer?</p>
 
 
-<h2 id="sec:1.2">1.2 Clarifying deeply-buried tensor code</h2>
 
+<h3 id="sec:1.1.3">1.1.3 Clarifying exceptions triggered within prebuilt layers</h3>
 
-<p>TensorSensor traps and augments exceptions triggered in any of your code  initiated from within the <span class=inlinecode>with</span> statement block. For example, let's wrap the simple linear layer code from above into an object:</p>
-
-
-<div class="codeblk">class Linear:
-    def __init__(self, d, n_neurons):
-        self.W = torch.randn(n_neurons, d)
-        self.b = torch.zeros(n_neurons, 1)
-    def __call__(self, input):
-        return self.W @ input + self.b</div>
-
-
-<p>Then, we can create a layer as an object and perform a forward computation using fake input <span class=inlinecode>X</span>:</p>
-
-
-<div class="codeblk">L = Linear(d, n_neurons) # create a layer
-X = torch.rand(n, d)     # fake input
-with tsensor.clarify():
-    Y = L(X)</div>
-
-
-<p>The <span class=inlinecode>Linear</span> layer has the correct dimensionality on weights <span class=inlinecode>W</span> and bias <span class=inlinecode>b</span>, but the equation in <span class=inlinecode>__call__()</span> references <span class=inlinecode>input</span> rather than the transpose of that input matrix, triggering an exception:</p>
-
-<p><center>
-<a href="images/torch-linear.svg">
-<img src="images/torch-linear.svg" width="35%" url="images/torch-linear.svg">
-</a>
-</center>
-</p>
-
-<p>
-<div class=exception>---------------------------------------------------------------------------
-RuntimeError                              Traceback (most recent call last)
-&lt;ipython-input-20-b6b1bd407c61> in &lt;module>
-      9 
-     10 with tsensor.clarify(hush_errors=False):
----> 11     Y = L(X)
-
-&lt;ipython-input-16-678a8372f1c2> in __call__(self, x)
-      4         self.b = torch.zeros(n_neurons, 1)
-      5     def __call__(self, x):
-----> 6         return self.W@x + self.b
-
-RuntimeError: size mismatch, m1: [100 x 764], m2: [200 x 764] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
-Cause: @ on tensor operand self.W w/shape [100, 764] and operand x w/shape [200, 764]</div>
-</p>
-
-<p>In other words, the offending line of code does not have to be within the <span class=inlinecode>with</span> block proper; it can be in any code invoked from that block.</p>
 
 <p>TensorSensor visualizes the last piece of code before it enters your chosen tensor library. For example, let's use the standard PyTorch <span class=inlinecode>nn.Linear</span> linear layer but pass in an <span class=inlinecode>X</span> matrix that is <span class=inlinecode>n x n</span>, instead of the proper <span class=inlinecode>n x d</span>:</p>
 
@@ -332,24 +296,109 @@ Cause: L(X) tensor arg X w/shape [200, 200]</div>
 </tbody>
 </table>
 </center>
+<p>TensorSensor treats calls into tensor libraries as operators, whether the call is to a network layer or something simple like <span class=inlinecode>torch.dot(a,b)</span>. Exceptions triggered within library functions yield messages that identify the function and dimensionality of any tensor arguments.</p>
 
 
-<h2 id="sec:1.3">1.3 Visualizing tensors with a variety of dimensions</h2>
 
+
+<h2 id="sec:1.2">1.2 Clarifying deeply-buried tensor code</h2>
+
+
+<p>When using a high-level library like Keras with pre-built layer objects, we get excellent error messages that indicate a mismatch in dimensionality between the layers of deep learning network. If you're building a custom layer, however, or just implementing your own to understand deep learning more thoroughly, you'll need to examine exceptions triggered inside your layer objects. TensorSensor descends into any code initiated from within the <span class=inlinecode>with</span> statement block, stopping only when it reaches a tensor library function.</p>
+
+<p>As a demonstration, let's create our own linear network layer by wrapping the simple linear layer code from above in a class definition:</p>
+
+
+<div class="codeblk">class Linear:
+    def __init__(self, d, n_neurons):
+        self.W = torch.randn(n_neurons, d)
+        self.b = torch.zeros(n_neurons, 1)
+    def __call__(self, input):
+        return self.W @ input + self.b</div>
+
+
+<p>Then, we can create a layer as an object and perform a forward computation using some fake input <span class=inlinecode>X</span>:</p>
+
+
+<div class="codeblk">L = Linear(d, n_neurons) # create a layer
+X = torch.rand(n, d)     # fake input
+with tsensor.clarify():
+    Y = L(X)             # L(X) invokes L.__call__()</div>
+
+
+<p>The <span class=inlinecode>Linear</span> layer has the correct dimensionality on weights <span class=inlinecode>W</span> and bias <span class=inlinecode>b</span>, but the equation in <span class=inlinecode>__call__()</span> incorrectly references <span class=inlinecode>input</span> rather than the transpose of that input matrix, triggering an exception:</p>
+
+<p>
+<img src="images/torch-linear.svg" width="35%">
+<div class=exception>---------------------------------------------------------------------------
+RuntimeError                              Traceback (most recent call last)
+&lt;ipython-input-20-b6b1bd407c61> in &lt;module>
+      9 
+     10 with tsensor.clarify(hush_errors=False):
+---> 11     Y = L(X)
+
+&lt;ipython-input-16-678a8372f1c2> in __call__(self, x)
+      4         self.b = torch.zeros(n_neurons, 1)
+      5     def __call__(self, x):
+----> 6         return self.W@x + self.b    # L(X) invokes L.__call__()
+
+RuntimeError: size mismatch, m1: [100 x 764], m2: [200 x 764] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand self.W w/shape [100, 764] and operand x w/shape [200, 764]</div>
+</p>
+
+<p>Because <span class=inlinecode>L(X)</span> invokes our own code, not a tensor library function, TensorSensor clarifies the offending statement in <span class=inlinecode>__call__()</span> rather than the <span class=inlinecode>Y=L(X)</span> statement within the <span class=inlinecode>with</span> block.</p>
+
+<p>So far we've focused on clarifying exceptions, but sometimes we simply want to explain some correct tensor code to others or to make it easier to read. It's also the case that not all erroneous code triggers an exception; sometimes, we simply get the wrong answer. If that wrong answer has the wrong shape, TensorSensor can help.  Next, we introduce TensorSensor's <span class=inlinecode>explain()</span> functionality.</p>
+
+
+
+<h2 id="sec:1.3">1.3 Visualizing tensor code without triggering exceptions</h2>
+
+
+<p>TensorSensor's <span class=inlinecode>clarify()</span> has no effect unless tensor code triggers an exception. To visualize tensor dimensionality within Python statements, TensorSensor provides a mechanism called <span class=inlinecode>explain()</span> that is similar to <span class=inlinecode>clarify()</span> except that it generates a visualization for each statement executed within the block. For example, here's our familiar linear layer computation again but wrapped in an <span class=inlinecode>explain()</span> block and with resulting visualization of the tensor values:</p>
+
+
+<div class="codeblk">n = 200         # number of instances
+d = 764         # number of instance features
+n_neurons = 100 # how many neurons in this layer?
+
+W = torch.rand(n_neurons,d)
+b = torch.rand(n_neurons,1)
+X = torch.rand(n,d)
+
+with tsensor.explain():
+    Y = W @ X.T + b</div>
+
+
+<p><center>
+<a href="images/torch-mm-explain.svg">
+<img src="images/torch-mm-explain.svg" width="25%" url="images/torch-mm-explain.svg">
+</a>
+</center>
+</p>
+
+<p>Notice that column vectors are matrices with one column and are also shown as light green but as vertical rectangles not boxes.</p>
+
+<p><b>OTHER DIMENSIONS</b></p>
 
 <p>Debugging tensor code that uses matrices beyond two dimensions can be even more challenging. For example, it's very common to train deep learning networks in batches for performance reasons.  That means reshaping the input matrix, <span class=inlinecode>X</span>, into <span class=inlinecode>n_batches x batch_size x d</span> rather than <span class=inlinecode>n x d</span>. The following code simulates passing multiple batches through a linear layer but incorrectly passes the entire 3D <span class=inlinecode>X</span> instead of 2D batches.</p>
 
 
-<div class="codeblk">L = Linear(d,n_neurons) # Assume this is correct
-
-batch_size = 10
+<div class="codeblk">n = 200                          # number of instances
+d = 764                          # number of instance features
+n_neurons = 100                  # how many neurons in this layer?
+batch_size = 10                  # how many records per batch?
 n_batches = n // batch_size
+
+L = Linear(d,n_neurons) # Assume this is correct
 X = torch.rand(n_batches,batch_size,d)
 
 with tsensor.clarify():
     for b in range(n_batches):
         Y = L(X) # Oops! Should pass batch X[b]</div>
 
+
+<p>Ollie on Y = L(X): would it really work if we did? dimensions still seem off just by looking at it, did not execute code, so not sure</p>
 
 <p>In the TensorSensor visualization, notice that <span class=inlinecode>input</span> is 3D and that the third dimension is shown on an angle, with an extra box to indicate more than two dimensions:</p>
 <center>
