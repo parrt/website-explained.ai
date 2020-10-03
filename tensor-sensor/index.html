@@ -1,0 +1,473 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-118361649-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-118361649-1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+<link rel="stylesheet" type="text/css" href="css/article.css"/>
+<title>Clarifying exceptions and visualizing tensor operations in deep learning code</title>
+<!-- META -->
+<!-- LinkedIn meta -->
+<meta property='og:title' content="Clarifying exceptions and visualizing tensor operations in deep learning code"/>
+<meta property='og:image' content="">
+<meta property='og:description' content=""/>
+<meta property='og:url' content="http://explained.ai/tensor-sensor/index.html"/>
+
+<!-- Facebook meta -->
+<meta property="og:type" content="article" />
+
+<!-- Twitter meta -->
+<meta name="twitter:title" content="Clarifying exceptions and visualizing tensor operations in deep learning code">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@the_antlr_guy">
+<meta name="twitter:creator" content="@the_antlr_guy">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="">
+<!-- END META -->
+</head>
+<body>
+<div class="watermark">
+<i>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
+</div>
+
+<h1>1 Clarifying exceptions and visualizing tensor operations in deep learning code</h1>
+
+<p></p>
+
+<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="https://zeigermann.eu">Oliver Zeigermann</a></p>
+
+<p style="font-size: 80%; line-height:1.1;">(Terence teaches in <a href="https://www.usfca.edu/arts-sciences/graduate-programs/data-science">University of San Francisco's MS in Data Science program</a> ) and <a href="https://zeigermann.eu">Oliver Zeigermann</a> is the author of <a href="http://bit.ly/dl-course-manning">http://bit.ly/dl-course-manning</a>. You might know Terence as the creator of the ANTLR parser generator.)</p>
+
+
+
+<div id="toc">
+<p class="toc_title">Contents</p>
+<ul>
+	<li><a href="#sec:1.1">Isolating issues in tensor code is maddening!</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.2">Clarifying deeply-buried tensor code</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.3">Visualizing tensors with a variety of dimensions</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.4">Explaining non-erroneous tensor code</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.5">TensorSensor implementation Kung Fu</a>
+	<ul>
+	</ul>
+	</li>
+
+</ul>
+</div>
+
+
+<p>	One of the biggest challenges when writing code to implement deep learning networks, particularly for beginners, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. In fact, it's perhaps best to start exploring deep learning using a high-level library, such as Keras or fastai, to avoid a lot of the details. Ultimately, however, we think it's important to understand the underlying tensor arithmetic by implementing your own network layers and so on. When you do, you're going to run into some less than helpful exception messages.</p>
+
+<p>In this article, we demonstrate the functionality of a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>) that aims to help programmers debug tensor code.  what does it do: clarify to augment messages and visualize Python code indicating dimensions of tensor operand.</p>
+
+<p>We assume familiarity with the fundamentals of neural networks, matrix algebra, etc...</p>
+
+<p>to understand the implementation part you need experience with language implementation.</p>
+
+<p>I think the audience is really people doing tensor math code which is not people doing keras and such.  maybe I need to say that up front</p>
+
+
+
+<h2 id="sec:1.1">1.1 Isolating issues in tensor code is maddening!</h2>
+
+
+<p>Even for experts, it can be hard to quickly identify the cause of an exception in a line of Python code performing tensor operations.  The debugging process usually involves adding a print statement in front of the offending line to emit the shape of each tensor operand.  That works but requires editing the code to create the debugging statement and rerunning the training process. Or, we can manually click or type commands to request all operand shapes using an interactive debugger. (This can be less practical in an IDE like PyCharm where executing code in debug mode is much slower.)</p>
+
+<p>Let's look at a simple tensor computation to illustrate the less-than-optimal information provided by the default exception message. Consider the following simple NumPy implementation for a hardcoded single (linear) network layer that contains a tensor dimension error.</p>
+
+
+<div class="codeblk">import numpy as np
+
+n = 200                          # number of instances
+d = 764                          # number of instance features
+n_neurons = 100                  # how many neurons in this layer?
+
+W = np.random.rand(d,n_neurons)  # Ooops! Should be (n_neurons,d) &lt;=======
+b = np.random.rand(n_neurons,1)
+X = np.random.rand(n,d)          # fake input matrix with n rows of d-dimensions
+
+Y = W @ X.T + b                  # pass all X instances through layer</div>
+
+
+<p>Executing that code triggers an exception whose important elements are:</p>
+
+<p>
+<div class=exception>...
+---> 10 Y = W @ X.T + b
+	
+ValueError: matmul: Input operand 1 has a mismatch in its core dimension 0, with gufunc signature (n?,k),(k,m?)->(n?,m?) (size 764 is different from 100)</div>
+</p>
+
+<p>The exception identifies the offending line and which operation (<span class=inlinecode>matmul</span>: matrix multiply) but would be more useful if it gave the complete tensor dimensions. Also, the exception would be unable to distinguish between multiple matrix multiplications occurring in one line of Python.</p>
+
+<p>Next, let's see how TensorSensor makes debugging that statement much easier. If we wrap the statement using a Python <span class=inlinecode>with</span> statement and <span class=inlinecode>tsensor</span>'s <span class=inlinecode>clarify()</span>, we get a visualization and an augmented error message. </p>
+
+
+<div class="codeblk">import tsensor
+with tsensor.clarify():
+    Y = W @ X.T + b</div>
+
+
+<p>
+<img src="images/numpy-mm-py.svg" width="20%">
+<div class=exception>...
+ValueError: matmul: Input operand ...
+Cause: @ on tensor operand W w/shape (764, 100) and operand X.T w/shape (764, 200)</div>
+</p>
+
+<p>It's clear from the visualization that <span class=inlinecode>W</span>'s dimensions should be flipped to be <span class=inlinecode>n_neurons x d</span>; the columns of <span class=inlinecode>W</span> must match the rows of <span class=inlinecode>X.T</span>. You can also checkout a <a href="images/numpy-mm.png">complete side-by-side image</a> with and without <span class=inlinecode>clarify()</span> to see what it looks like in a notebook.</p>
+
+<p>The <span class=inlinecode>clarify()</span> functionality incurs no overhead on the executing program until an exception occurs. Upon exception, <span class=inlinecode>clarify()</span>:</p>
+<ol>
+<li> Augments the exception object's message created by the underlying tensor library.</li>
+<li> Gives a visual representation of the tensor sizes involved in the offending operation; only the operands and operator involved in the exception are highlighted, while the other Python elements are de-highlighted.</li>
+</ol>
+<p>TensorSensor also clarifies tensor-related exceptions raised by PyTorch and TensorFlow. Here are the equivalent code snippets and resulting augmented exception error messages (<span class=inlinecode>Cause: @ on tensor ...</span>) and visualization from TensorSensor:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th valign=top width="50%" align="center">PyTorch</th><th valign=top align="center">TensorFlow</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign=top align="left">
+
+<div class="codeblk">import torch
+W = torch.rand(d,n_neurons)
+b = torch.rand(n_neurons,1)
+X = torch.rand(n,d)
+with tsensor.clarify():
+    Y = W @ X.T + b</div>
+
+</td><td valign=top align="left">
+
+<div class="codeblk">import tensorflow as tf
+W = tf.random.uniform((d,n_neurons))
+b = tf.random.uniform((n_neurons,1))
+X = tf.random.uniform((n,d))
+with tsensor.clarify():
+    Y = W @ tf.transpose(X) + b</div>
+
+</td>
+</tr>
+<tr>
+<td valign=top align="center">
+<img src="images/mm.svg" width="40%">
+<div class=exception>RuntimeError: size mismatch, m1: [764 x 100], m2: [764 x 200] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand W w/shape [764, 100] and operand X.T w/shape [764, 200]</div>
+
+<td>
+<html>
+<img src="images/tf-mm.svg" width="70%">
+<div class=exception>InvalidArgumentError: Matrix size-incompatible: In[0]: [764,100], In[1]: [764,200] [Op:MatMul]
+Cause: @ on tensor operand W w/shape (764, 100) and operand tf.transpose(X) w/shape (764, 200)</div>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>The PyTorch message does not identify which operation triggered the exception but TensorFlow's message does indicate matrix multiplication. Both show the operand dimensions.  These messages are probably good enough for this simple tensor expression for a linear layer, but such exceptions are not as helpful for, say, an expression pulled from a Gated Recurrent Unit (GRU) implementation. </p>
+
+<p>You might be wondering why NumPy doesn't generate an exception message identifying the Python variables involved.   It's not that the authors of the library simply didn't bother. The fundamental problem is that tensor exceptions are detected deep in the C or C++ implementations of the tensor libraries. The Python bits are usually just wrappers that call the highly-optimized C/C++, which has absolutely no access to the Python symbol spaces and call stack.</p>
+
+<p>probably a new section here.  maybe we start talking about explain() vs clarify()</p>
+
+<p>Quick! Where is the dimension mismatch in the following code using just the the fault exception message? (No peeking at the visualization or augmented error message!)</p>
+
+
+<div class="codeblk">nhidden = 256
+Whh_ = torch.eye(nhidden, nhidden)
+Uxh_ = torch.randn(d, nhidden)
+bh_  = torch.zeros(nhidden, 1)
+X = torch.rand(n,d)             # fake input
+
+with tsensor.clarify():
+    h = torch.randn(nhidden, 1) # fake previous hidden state h
+    r = torch.randn(nhidden, 1) # fake this computation
+    h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)</div>
+
+
+<p><center>
+<a href="images/torch-gru.svg">
+<img src="images/torch-gru.svg" width="55%" url="images/torch-gru.svg">
+</a>
+</center>
+
+<div class=exception>---> 10 h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)
+RuntimeError: size mismatch, m1: [764 x 256], m2: [764 x 200] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand Uxh_ w/shape [764, 256] and operand X.T w/shape [764, 200]
+</div>
+</p>
+
+<p>In this case, there are two matrix multiplications, two vector additions, and even a vector element-wise modification.  Without the augmented error message or visualization we wouldn't know which operator and operands caused the exception. TensorSensor's clarification makes it clear that <span class=inlinecode>Uxh_</span> has its dimensions flipped; it should be:</p>
+
+
+<div class="codeblk">Uxh_ = torch.randn(nhidden, d)</div>
+
+
+
+
+<h2 id="sec:1.2">1.2 Clarifying deeply-buried tensor code</h2>
+
+
+<p>TensorSensor traps and augments exceptions triggered in any of your code  initiated from within the <span class=inlinecode>with</span> statement block. For example, let's wrap the simple linear layer code from above into an object:</p>
+
+
+<div class="codeblk">class Linear:
+    def __init__(self, d, n_neurons):
+        self.W = torch.randn(n_neurons, d)
+        self.b = torch.zeros(n_neurons, 1)
+    def __call__(self, input):
+        return self.W @ input + self.b</div>
+
+
+<p>Then, we can create a layer as an object and perform a forward computation using fake input <span class=inlinecode>X</span>:</p>
+
+
+<div class="codeblk">L = Linear(d, n_neurons) # create a layer
+X = torch.rand(n, d)     # fake input
+with tsensor.clarify():
+    Y = L(X)</div>
+
+
+<p>The <span class=inlinecode>Linear</span> layer has the correct dimensionality on weights <span class=inlinecode>W</span> and bias <span class=inlinecode>b</span>, but the equation in <span class=inlinecode>__call__()</span> references <span class=inlinecode>input</span> rather than the transpose of that input matrix, triggering an exception:</p>
+
+<p><center>
+<a href="images/torch-linear.svg">
+<img src="images/torch-linear.svg" width="35%" url="images/torch-linear.svg">
+</a>
+</center>
+</p>
+
+<p>
+<div class=exception>---------------------------------------------------------------------------
+RuntimeError                              Traceback (most recent call last)
+&lt;ipython-input-20-b6b1bd407c61> in &lt;module>
+      9 
+     10 with tsensor.clarify(hush_errors=False):
+---> 11     Y = L(X)
+
+&lt;ipython-input-16-678a8372f1c2> in __call__(self, x)
+      4         self.b = torch.zeros(n_neurons, 1)
+      5     def __call__(self, x):
+----> 6         return self.W@x + self.b
+
+RuntimeError: size mismatch, m1: [100 x 764], m2: [200 x 764] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand self.W w/shape [100, 764] and operand x w/shape [200, 764]</div>
+</p>
+
+<p>In other words, the offending line of code does not have to be within the <span class=inlinecode>with</span> block proper; it can be in any code invoked from that block.</p>
+
+<p>TensorSensor visualizes the last piece of code before it enters your chosen tensor library. For example, let's use the standard PyTorch <span class=inlinecode>nn.Linear</span> linear layer but pass in an <span class=inlinecode>X</span> matrix that is <span class=inlinecode>n x n</span>, instead of the proper <span class=inlinecode>n x d</span>:</p>
+
+
+<div class="codeblk">L = torch.nn.Linear(d, n_neurons)
+X = torch.rand(n,n) # oops! Should be n x d
+with tsensor.clarify():
+    Y = L(X)</div>
+
+<center>
+<table style="">
+<thead>
+<tr>
+<th valign=top width="30%" align="center">Visualization</th><th valign=top align="center">Augmented exception message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign=top align="center">
+
+<center>
+<center>
+<a href="images/torch-nn-linear.svg">
+<img src="images/torch-nn-linear.svg" width="47%" url="images/torch-nn-linear.svg">
+</a>
+</center>
+
+</center>
+
+</td><td valign=top align="center">
+<div class=exception>RuntimeError: size mismatch, m1: [200 x 200], m2: [764 x 100] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: L(X) tensor arg X w/shape [200, 200]</div>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+
+
+<h2 id="sec:1.3">1.3 Visualizing tensors with a variety of dimensions</h2>
+
+
+<p>Debugging tensor code that uses matrices beyond two dimensions can be even more challenging. For example, it's very common to train deep learning networks in batches for performance reasons.  That means reshaping the input matrix, <span class=inlinecode>X</span>, into <span class=inlinecode>n_batches x batch_size x d</span> rather than <span class=inlinecode>n x d</span>. The following code simulates passing multiple batches through a linear layer but incorrectly passes the entire 3D <span class=inlinecode>X</span> instead of 2D batches.</p>
+
+
+<div class="codeblk">L = Linear(d,n_neurons) # Assume this is correct
+
+batch_size = 10
+n_batches = n // batch_size
+X = torch.rand(n_batches,batch_size,d)
+
+with tsensor.clarify():
+    for b in range(n_batches):
+        Y = L(X) # Oops! Should pass batch X[b]</div>
+
+
+<p>In the TensorSensor visualization, notice that <span class=inlinecode>input</span> is 3D and that the third dimension is shown on an angle, with an extra box to indicate more than two dimensions:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th valign=top width="37%" align="center">Visualization</th><th valign=top align="center">Augmented exception message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign=top align="center">
+
+<center>
+<center>
+<a href="images/torch-batch.svg">
+<img src="images/torch-batch.svg" width="100%" url="images/torch-batch.svg">
+</a>
+</center>
+
+</center>
+
+</td><td valign=top align="center">
+<div class=exception>RuntimeError: size mismatch, m1: [15280 x 10], m2: [764 x 100] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand self.W w/shape [100, 764] and operand input.T w/shape [764, 10, 20]</div>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>To demonstrate TensorSensor's visualization for tensors beyond 3D, consider input instances that are images containing red, green, blue values for each input pixel. A common representation would be a <span class=inlinecode>1 x d x 3</span> matrix for each image (<span class=inlinecode>d</span> would be with times height of the image). For <span class=inlinecode>n</span> images, we have an <span class=inlinecode>n x d x 3</span> matrix. Now, add batching to that and we get an <span class=inlinecode>n_batches x batch_size x d x 3</span> matrix.  The goal here is to illustrate the 4D visualization, so let's create a 4D matrix and then perform an illegal operation. (The <span class=inlinecode>[:]</span> in <span class=inlinecode>X[:]</span> prevents silent broadcasting so we get an exception.)</p>
+
+
+<div class="codeblk">W = torch.rand(n_neurons,d)
+b = torch.rand(n_neurons,1)
+batch_size = 10
+n_batches = n // batch_size
+X = torch.rand(n_batches,batch_size,d,3)
+
+with tsensor.explain():
+    Y = W @ X[:].T + b</div>
+
+<center>
+<table style="">
+<thead>
+<tr>
+<th valign=top width="37%" align="center">Visualization</th><th valign=top align="center">Augmented exception message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign=top align="center">
+
+<center>
+<center>
+<a href="images/torch-4D.svg">
+<img src="images/torch-4D.svg" width="83%" url="images/torch-4D.svg">
+</a>
+</center>
+
+</center>
+
+</td><td valign=top align="center">
+<div class=exception>RuntimeError: size mismatch, m1: [45840 x 10], m2: [764 x 100] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
+Cause: @ on tensor operand W w/shape [100, 764] and operand X[:].T w/shape [3, 764, 10, 20]
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>For matrices with more than three dimensions, all dimensions are displayed at the bottom of the matrix box. In this case, the fourth dimension is displayed as &ldquo;<span class=inlinecode>...x3</span>&rdquo;.</p>
+
+<p>Row and column vectors are matrices with one row and one column, respectively. These are also shown as light green but as horizontal or vertical rectangles. For example, let's create a column vector and attempt a dot product:</p>
+
+
+<div class="codeblk">b = torch.rand(n_neurons,1)
+with tsensor.clarify() as c:
+    torch.dot(b, b)</div>
+
+
+<p>The PyTorch dot product expects 1D not 2D matrices (even though one of the dimensions has size 1), so we get an exception. TensorSensor highlights the function and appropriate arguments:</p>
+<center>
+<table style="">
+<thead>
+<tr>
+<th valign=top width="37%" align="center">Visualization</th><th valign=top align="center">Augmented exception message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign=top align="center">
+
+<center>
+<center>
+<a href="images/torch-1D.svg">
+<img src="images/torch-1D.svg" width="53%" url="images/torch-1D.svg">
+</a>
+</center>
+
+</center>
+
+</td><td valign=top align="center">
+<div class=exception>RuntimeError: 1D tensors expected, got 2D, 2D tensors at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorEvenMoreMath.cpp:83
+Cause: torch.dot(b,b) tensor arg b w/shape [100, 1], arg b w/shape [100, 1]
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p>row vecs look like: ...</p>
+
+<p>1D looks like: ...</p>
+
+<p>show something about what I rejected, including relative sizing.</p>
+
+
+
+<h2 id="sec:1.4">1.4 Explaining non-erroneous tensor code</h2>
+
+
+<p>explain</p>
+
+<p>full AST</p>
+
+
+
+<h2 id="sec:1.5">1.5 TensorSensor implementation Kung Fu</h2>
+
+
+<p>	</p>
+
+
+
+</body>
+</html>
