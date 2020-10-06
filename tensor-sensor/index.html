@@ -17,8 +17,8 @@
 <!-- META -->
 <!-- LinkedIn meta -->
 <meta property='og:title' content="Clarifying exceptions and visualizing tensor operations in deep learning code"/>
-<meta property='og:image' content="">
-<meta property='og:description' content=""/>
+<meta property='og:image' content="https://explained.ai/tensor-sensor/images/teaser.png">
+<meta property='og:description' content="One of the biggest challenges when writing code to implement deep learning networks is getting all of the tensor (matrix and vector) dimensions to line up properly. This article describes a new library called TensorSensor that clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables. It works with Tensorflow, PyTorch, and Numpy, as well as higher-level libraries like Keras and fastai."/>
 <meta property='og:url' content="http://explained.ai/tensor-sensor/index.html"/>
 
 <!-- Facebook meta -->
@@ -29,8 +29,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@the_antlr_guy">
 <meta name="twitter:creator" content="@the_antlr_guy">
-<meta name="twitter:description" content="">
-<meta name="twitter:image" content="">
+<meta name="twitter:description" content="One of the biggest challenges when writing code to implement deep learning networks is getting all of the tensor (matrix and vector) dimensions to line up properly. This article describes a new library called TensorSensor that clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables. It works with Tensorflow, PyTorch, and Numpy, as well as higher-level libraries like Keras and fastai.">
+<meta name="twitter:image" content="https://explained.ai/tensor-sensor/images/teaser.png">
 <!-- END META -->
 </head>
 <body>
@@ -88,10 +88,10 @@
 
 <p><center>
 <a href="images/teaser.png">
-<img src="images/teaser.png" width="50%" align="right" url="images/teaser.png">
+<img src="images/teaser.png" width="40%" align="right" url="images/teaser.png">
 </a>
 </center>
-One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables. It works with <a href="https://www.tensorflow.org/">Tensorflow</a>, <a href="https://pytorch.org/">PyTorch</a>, and <a href="https://numpy.org/">Numpy</a>, as well as higher-level libraries like <a href="https://keras.io/">Keras</a> and <a href="https://www.fast.ai/">fastai</a>.</p>
+One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables (see figure to the right for a teaser). It works with <a href="https://www.tensorflow.org/">Tensorflow</a>, <a href="https://pytorch.org/">PyTorch</a>, and <a href="https://numpy.org/">Numpy</a>, as well as higher-level libraries like <a href="https://keras.io/">Keras</a> and <a href="https://www.fast.ai/">fastai</a>.</p>
 
 
 
