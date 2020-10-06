@@ -71,11 +71,15 @@
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:1.5">Visualizing subexpression tensor shapes</a>
+	<li><a href="#sec:1.5">Warnings and limitations</a>
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:1.6">Key TensorSensor implementation Kung Fu</a>
+	<li><a href="#sec:1.6">Visualizing subexpression tensor shapes</a>
+	<ul>
+	</ul>
+	</li>
+	<li><a href="#sec:1.7">Key TensorSensor implementation Kung Fu</a>
 	<ul>
 	</ul>
 	</li>
@@ -84,14 +88,16 @@
 </div>
 
 
-<p>Most people solve deep learning problems using high-level libraries such as <a href="https://keras.io/">Keras</a> or <a href="https://www.fast.ai/">fastai</a>,  which makes sense. These libraries hide a lot of implementation details that we either don't care about or can learn later.  To truly understand deep learning, however, I think it's important at some point to implement your own network layers and training loops. For example, see my recent article called <a href="https://explained.ai/rnn/index.html">Explaining RNNs without neural networks</a>. If you're comfortable building deep learning models while leaving some of the details a bit fuzzy, then this article is not for you.  In my quirky case, I care more about learning something deeply than actually applying it to something useful, so I go straight for the details. (I guess that's why I work at a university, not an industry 😀.)  This article is in response to a pain point I experienced during an obsessive coding and learning burn through the fundamentals of deep learning in the isolation of Covid summer 2020.</p>
+<p>	Most people solve deep learning problems using high-level libraries such as <a href="https://keras.io/">Keras</a> or <a href="https://www.fast.ai/">fastai</a>,  which makes sense. These libraries hide a lot of implementation details that we either don't care about or can learn later.  To truly understand deep learning, however, I think it's important at some point to implement your own network layers and training loops. For example, see my recent article called <a href="https://explained.ai/rnn/index.html">Explaining RNNs without neural networks</a>. If you're comfortable building deep learning models while leaving some of the details a bit fuzzy, then this article is not for you.  In my quirky case, I care more about learning something deeply than actually applying it to something useful, so I go straight for the details. (I guess that's why I work at a university, not an industry 😀.)  This article is in response to a pain point I experienced during an obsessive coding and learning burn through the fundamentals of deep learning in the isolation of Covid summer 2020.</p>
 
 <p><center>
 <a href="images/teaser.png">
 <img src="images/teaser.png" width="40%" align="right" url="images/teaser.png">
 </a>
 </center>
-One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables (see figure to the right for a teaser). It works with <a href="https://www.tensorflow.org/">Tensorflow</a>, <a href="https://pytorch.org/">PyTorch</a>, and <a href="https://numpy.org/">Numpy</a>, as well as higher-level libraries like <a href="https://keras.io/">Keras</a> and <a href="https://www.fast.ai/">fastai</a>.</p>
+One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations.  Even when just feeding data into predefined <a href="https://www.tensorflow.org/">Tensorflow</a> network layers, we still need to get the dimensions right. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables (see figure to the right for a teaser). It works with <a href="https://www.tensorflow.org/">Tensorflow</a>, <a href="https://pytorch.org/">PyTorch</a>, and <a href="https://numpy.org/">Numpy</a>, as well as higher-level libraries like <a href="https://keras.io/">Keras</a> and <a href="https://www.fast.ai/">fastai</a>.</p>
+
+<p><i>TensorSensor is currently at 0.1b1 so I'm happy to receive issues created at the</i> <a href="https://github.com/parrt/tensor-sensor">repo</a> <i>or direct email</i>.</p>
 
 
 
@@ -397,7 +403,7 @@ with tsensor.explain():
 
 <div class="codeblk">n_neurons = 100
 b = torch.rand(1,n_neurons) # 2D tensor 1 x n_neurons
-with tsensor.explain() as c:
+with tsensor.explain():
     y = b @ b.T</div>
 
 
@@ -412,7 +418,7 @@ with tsensor.explain() as c:
 
 
 <div class="codeblk">b = torch.rand(n_neurons) # 1D tensor
-with tsensor.explain() as c:
+with tsensor.explain():
     y = torch.dot(b, b)</div>
 
 
@@ -423,17 +429,6 @@ with tsensor.explain() as c:
 </p>
 
 <p>The visualization for 1D tensors look like 2D row vectors but the yellow color (versus pale green) signals that it's 1D. (This is important because tensor libraries often treat 1D vectors and 2D row vectors differently.) The result (<span class=inlinecode>y</span>) is a scalar and, hence, has no visualization component.</p>
-
-<p>Before moving on to 3D+ tensor visualizations, there are some important characteristics of <span class=inlinecode>explain()</span> to highlight.  First, unlike <span class=inlinecode>clarify()</span>, <span class=inlinecode>explain()</span> does not descend into code invoked from the statements in the <span class=inlinecode>with</span> block.  It only visualizes statements within the <span class=inlinecode>with</span> block proper. Every execution of the <span class=inlinecode>with</span> block statement(s) generates a new image and at most one image. In other words, if the <span class=inlinecode>with</span> code is in a loop, you  won't see multiple visualizations for the same statement.</p>
-
-<p>Second, both <span class=inlinecode>clarify()</span> and <span class=inlinecode>explain()</span> cause tensor statements to execute twice, so beware of side effects. For example, the following code prints &ldquo;hi&rdquo; twice, once by TensorSensor and once during normal program execution. Most tensor expressions are side-effect free, so it's usually not a problem, but keep it in mind. (See the implementation section below for more details.)</p>
-
-
-<div class="codeblk">with tsensor.explain():
-    print("hi")</div>
-
-
-<p>Finally, because <span class=inlinecode>explain()</span> creates a visualization for every statement in the <span class=inlinecode>with</span> block, &ldquo;explained&rdquo; code will run significantly slower. </p>
 
 
 
@@ -493,7 +488,38 @@ with tsensor.explain():
 
 
 
-<h2 id="sec:1.5">1.5 Visualizing subexpression tensor shapes</h2>
+<h2 id="sec:1.5">1.5 Warnings and limitations</h2>
+
+
+<p>There are some important characteristics of TensorSensor to highlight. First, unlike <span class=inlinecode>clarify()</span>, <span class=inlinecode>explain()</span> does not descend into code invoked from the statements in the <span class=inlinecode>with</span> block.  It only visualizes statements within the <span class=inlinecode>with</span> block proper. Every execution of the <span class=inlinecode>with</span> block statement(s) generates a new image and at most one image. In other words, if the <span class=inlinecode>with</span> code is in a loop, you  won't see multiple visualizations for the same statement.</p>
+
+<p>Second, both <span class=inlinecode>clarify()</span> and <span class=inlinecode>explain()</span> cause tensor statements to execute twice, so beware of <b>side effects</b>. For example, the following code prints &ldquo;hi&rdquo; twice, once by TensorSensor and once during normal program execution. Most tensor expressions are side-effect free, so it's usually not a problem, but keep it in mind. (See the implementation section below for more details.)</p>
+
+
+<div class="codeblk">with tsensor.explain():
+    print("hi")</div>
+
+
+<p>Third, TensorSensor doesn't handle all statements/expressions and all Python code structures. The parser ignores lines starting with keywords other than <span class=inlinecode>return</span>, so the clarify and explain routines do not handle methods expressed like:</p>
+
+
+<div class="codeblk">def bar(): y = x * 3 + b</div>
+
+
+<p>Instead, use:</p>
+
+
+<div class="codeblk">def bar():
+    y = x * 3 + b</div>
+
+
+<p>The statements in a clarify or explain <span class=inlinecode>with</span> block must also be on lines by themselves.</p>
+
+<p>Finally, because <span class=inlinecode>explain()</span> creates a visualization for every statement in the <span class=inlinecode>with</span> block, &ldquo;explained&rdquo; code will run significantly slower. </p>
+
+
+
+<h2 id="sec:1.6">1.6 Visualizing subexpression tensor shapes</h2>
 
 
 <p>Most of the time, knowing the shape of the tensor variables referenced in an expression is sufficient to debug a Python statement. Sometimes, however, and operator combining the results of other operators is the source of the problem.  We need a way to visualize the shape of all partial results, which we can do with and upside down tree that shows the data flow and shape of all subexpressions. In the language world, we call that an abstract syntax tree or AST. For example, here is the fake GRU computation set up from above (with a proper <span class=inlinecode>Uxh_</span> definition):</p>
@@ -527,12 +553,14 @@ X = torch.rand(n,d)             # fake input</div>
 
 
 
-<h2 id="sec:1.6">1.6 Key TensorSensor implementation Kung Fu</h2>
+<h2 id="sec:1.7">1.7 Key TensorSensor implementation Kung Fu</h2>
 
+
+<p><i>And now for something completely different...</i></p>
 
 <p>The implementation of TensorSensor leveraged my experience as a language implementor, which came in surprisingly handy in my new world as a machine learning droid.  If you have similar experience, most of the details will be clear to you in the code, but it's worth exploring the key trick to making everything you see in this article work: incrementally parsing and evaluating bits of Python statements and expressions, recording their partial results. (It's also the case that I abused <span class=inlinecode>matplotlib</span> horribly to generate the visualizations, but you can check out the code to see how that works.)</p>
 
-<p>As I pointed out earlier, Python traps exceptions at the statement level. For example, if you get an <span class=inlinecode>IndexError</span> in <span class=inlinecode>a[i] + b[j]</span>, Python doesn't tell you  which index operation caused the exception. The same is true for tensor computations and calls to tensor libraries; only the entire statement is flagged. At first, I thought I would have to process the Python bytecode and inject code to track subexpression evaluation, but realized I could do the same thing using <span class=inlinecode>eval()</span> using substrings of the Python statement.</p>
+<p>As I pointed out earlier, Python traps exceptions at the statement level. For example, if you get an <span class=inlinecode>IndexError</span> in <span class=inlinecode>a[i] + b[j]</span>, Python doesn't tell you  which index operation caused the exception. The same is true for tensor computations and calls to tensor libraries; only the entire statement is flagged. At first, I thought I would have to process the Python bytecode and inject code to track subexpression evaluation, but realized I could do the same thing using <span class=inlinecode>eval()</span> on various substrings of the Python statement.</p>
 
 <p>To identify the individual operator and operands that triggered an exception, we literally have to reevaluate each operation in the Python line, in the proper order, piece-by-piece and wait for an exception to occur. That, in turn, means parsing the statement to build an appropriate AST with operators as subtree roots. For example, the parser converts </p>
 
@@ -540,7 +568,7 @@ X = torch.rand(n,d)             # fake input</div>
 <div class="codeblk">h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)</div>
 
 
-<p>into this AST with all tokens as leaves:</p>
+<p>into this AST:</p>
 
 <p>
 <a href="images/torch-gru-ast.svg">
@@ -548,13 +576,13 @@ X = torch.rand(n,d)             # fake input</div>
 </a>
 </p>
 
-<p>I used the built-in Python tokenizer, but built my own parser for the subset of statements (assignments, <span class=inlinecode>return</span>) and operations supported by TensorSensor. There is a built-in Python parser, but it generates a different AST than I wanted; plus, filtering the built-in tree structure for just the parts I care about would be about the same amount of work as the parser.  I built the parser using simple recursive descent, rather than adding another dependency (my friend <span class=inlinecode>antlr</span>) to TensorSensor. (See module <span class=inlinecode>tsensor.parser</span>.)</p>
+<p>I used the built-in Python tokenizer, but built my own parser for the subset of statements (assignments, <span class=inlinecode>return</span>) and operations supported by TensorSensor. There is a built-in Python parser, but it generates a different AST than I wanted; plus, filtering the built-in tree structure for just the parts I care about would be about the same amount of work as writing the parser.  I built the parser using simple recursive descent, rather than adding another dependency (my friend <a href="http://www.antlr.org">antlr</a>) to TensorSensor. (See module <span class=inlinecode>tsensor.parser</span>.)</p>
 
-<p>Next, we need to augment the AST with the values of all subexpressions so it looks like the AST from the previous section.  This is a straightforward bottom-up walk of the AST calling <span class=inlinecode>eval()</span> on each subexpression, saving the result in the associated node. In order to execute the various bits of the expression in the proper context, though, TensorSensor has to walk the call stack back down to the specific context that directly invoked the tensor library.  The trick is not chasing the call stack to far, down into the tensor library. (See <span class=inlinecode>tsensor.analysis.deepest_frame()</span>.)</p>
+<p>Next, we need to augment the AST with the values of all subexpressions so it looks like the AST from the previous section.  This is a straightforward bottom-up walk of the AST calling <span class=inlinecode>eval()</span> on each subexpression, saving the result in the associated node. In order to execute the various bits of the expression in the proper context after an exception, though, TensorSensor has to walk the call stack back down to the specific context that directly invoked the tensor library.  The trick is not chasing the call stack too far, down into the tensor library. (See <span class=inlinecode>tsensor.analysis.deepest_frame()</span>.)</p>
 
-<p>Once the AST is augmented with partial values, we need to find the smallest subexpressions that evaluates to a tensor for visualization purposes. That corresponds to the deepest subtree that evaluates to a tensor, which is the role of <span class=inlinecode>tsensor.analysis.smallest_matrix_subexpr()</span>.</p>
+<p>Once the AST is augmented with partial values, we need to find the smallest subexpressions that evaluate to tensors for visualization purposes. That corresponds to the deepest subtrees that evaluate to tensors, which is the role of <span class=inlinecode>tsensor.analysis.smallest_matrix_subexpr()</span>.</p>
 
-<p>Both <span class=inlinecode>clarify()</span> and <span class=inlinecode>explain()</span> use the <span class=inlinecode>with</span>-statement functions <span class=inlinecode>__enter__()</span> and <span class=inlinecode>__exit__()</span>. To initiate <span class=inlinecode>clarify()</span>, simply remembers the execution context and, while exiting, it checks for an exception (<span class=inlinecode>is_interesting_exception()</span>). If there is an exception, <span class=inlinecode>clarify()</span> passes the offending Python source line to  <span class=inlinecode>tsensor.viz.pyviz()</span>, which reevaluates the line piece-by-piece to find the operation that triggered the exception. Then it visualizes the line of code with matplotlib.</p>
+<p>Both <span class=inlinecode>clarify()</span> and <span class=inlinecode>explain()</span> use the <span class=inlinecode>with</span>-statement functions <span class=inlinecode>__enter__()</span> and <span class=inlinecode>__exit__()</span>. To initiate <span class=inlinecode>clarify()</span>, we just need to remember the execution context and, while exiting, we check for an exception (<span class=inlinecode>is_interesting_exception()</span>). If there is an exception, <span class=inlinecode>clarify()</span> passes the offending Python source line to  <span class=inlinecode>tsensor.viz.pyviz()</span>, which reevaluates the line piece-by-piece to find the operation that triggered the exception. Then it visualizes the line of code with matplotlib.</p>
 
 <p>To visualize each line of Python code as it executes, <span class=inlinecode>explain()</span>'s <span class=inlinecode>__enter__()</span> function creates a <span class=inlinecode>ExplainTensorTracer</span> object and passes it to <span class=inlinecode>sys.settrace()</span>. Python then notifies the tracer right before each line of code is executed. The tracer parses the line and, if there's no syntax error, the tracer calls <span class=inlinecode>tsensor.viz.pyviz()</span> to visualize the statement. The <span class=inlinecode>__exit__()</span> function turns off tracing but also checks for an exception like <span class=inlinecode>clarify()</span> does.</p>
 
