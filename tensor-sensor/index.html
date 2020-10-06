@@ -38,7 +38,7 @@
 <i>Brought to you by <a href='http://explained.ai'>explained.ai</a></i><br>
 </div>
 
-<h1>1 Clarifying exceptions and visualizing tensor operations in deep learning code</h1>
+<h1>Clarifying exceptions and visualizing tensor operations in deep learning code</h1>
 
 <p></p>
 
@@ -79,7 +79,7 @@
 	<ul>
 	</ul>
 	</li>
-	<li><a href="#sec:1.7">Key TensorSensor implementation Kung Fu</a>
+	<li><a href="#impl">Key TensorSensor implementation Kung Fu</a>
 	<ul>
 	</ul>
 	</li>
@@ -101,14 +101,14 @@ One of the biggest challenges when writing code to implement deep learning netwo
 
 
 
-<h2 id="sec:1.1">1.1 Isolating issues in tensor code is maddening!</h2>
+<h2 id="sec:1.1">Isolating issues in tensor code is maddening!</h2>
 
 
 <p>Even for experts, it can be hard to quickly identify the cause of an exception in a line of Python code performing tensor operations.  The debugging process usually involves adding a print statement in front of the offending line to emit the shape of each tensor operand.  That works requires editing the code to create the debugging statement and rerunning the training process. Or, we can manually click or type commands to request all operand shapes using an interactive debugger. (This can be less practical in an IDE like PyCharm where executing code in debug mode seems to be much slower.)  The following subsections illustrate the anemic default exception messages and my proposed TensorSensor approach, rather than a debugger or print statements.</p>
 
 
 
-<h3 id="sec:1.1.1">1.1.1 Debugging a simple linear layer</h3>
+<h3 id="sec:1.1.1">Debugging a simple linear layer</h3>
 
 
 <p>Let's look at a simple tensor computation to illustrate the less-than-optimal information provided by the default exception message. Consider the following simple NumPy implementation for a hardcoded single (linear) network layer that contains a tensor dimension error.</p>
@@ -219,11 +219,11 @@ Cause: @ on tensor operand W w/shape (764, 100) and operand tf.transpose(X) w/sh
 </center>
 <p>The PyTorch message does not identify which operation triggered the exception, but TensorFlow's message does indicate matrix multiplication. Both show the operand dimensions. These default exception messages are probably good enough for this simple tensor expression for a linear layer. Still, it's easier to see the problem with the TensorSensor visualization.</p>
 
-<p>You might be wondering, though, why tensor libraries don't generate a more helpful exception message that identified the names of the Python variables involved in the offending subexpression.  It's not that the library authors couldn't be bothered. The fundamental issue is that Python tensor libraries are wrappers around extremely efficient cores written in C or C++. Python passes, say, the data for two tensors to a C++ function, but not the associated tensor variable names in Python space. An exception caught deep in C++ has no access to the local and global variable spaces in Python, so it just throws a generic exception back over the fence.  Because Python traps exceptions at the statement level, it also cannot isolate the subexpression within the statement.  (To learn how TensorSensor manages to generate such specific messages, check out the section below.)</p>
+<p>You might be wondering, though, why tensor libraries don't generate a more helpful exception message that identified the names of the Python variables involved in the offending subexpression.  It's not that the library authors couldn't be bothered. The fundamental issue is that Python tensor libraries are wrappers around extremely efficient cores written in C or C++. Python passes, say, the data for two tensors to a C++ function, but not the associated tensor variable names in Python space. An exception caught deep in C++ has no access to the local and global variable spaces in Python, so it just throws a generic exception back over the fence.  Because Python traps exceptions at the statement level, it also cannot isolate the subexpression within the statement.  (To learn how TensorSensor manages to generate such specific messages, check out <b>Section</b> <i>Key TensorSensor implementation Kung Fu</i> below.)</p>
 
 
 
-<h3 id="sec:1.1.2">1.1.2 Debugging a complex tensor expression</h3>
+<h3 id="sec:1.1.2">Debugging a complex tensor expression</h3>
 
 
 <p>That lack of specificity in default messages makes it hard to identify bad subexpressions within more complicated statements that contain lots of operators. For example, here's a statement pulled from the guts of a Gated Recurrent Unit (GRU) implementation:</p>
@@ -280,7 +280,7 @@ Cause: @ on tensor operand Uxh_ w/shape [764, 256] and operand X.T w/shape [764,
 
 
 
-<h3 id="sec:1.1.3">1.1.3 Clarifying exceptions triggered within prebuilt layers</h3>
+<h3 id="sec:1.1.3">Clarifying exceptions triggered within prebuilt layers</h3>
 
 
 <p>TensorSensor visualizes the last piece of code before it enters your chosen tensor library. For example, let's use the standard PyTorch <span class=inlinecode>nn.Linear</span> linear layer but pass in an <span class=inlinecode>X</span> matrix that is <span class=inlinecode>n x n</span>, instead of the proper <span class=inlinecode>n x d</span>:</p>
@@ -320,7 +320,7 @@ Cause: L(X) tensor arg X w/shape [200, 200]</div>
 
 
 
-<h2 id="sec:1.2">1.2 Clarifying deeply-buried tensor code</h2>
+<h2 id="sec:1.2">Clarifying deeply-buried tensor code</h2>
 
 
 <p>When using a high-level library like Keras with pre-built layer objects, we get excellent error messages that indicate a mismatch in dimensionality between the layers of deep learning network. If you're building a custom layer, however, or just implementing your own to understand deep learning more thoroughly, you'll need to examine exceptions triggered inside your layer objects. TensorSensor descends into any code initiated from within the <span class=inlinecode>with</span> statement block, stopping only when it reaches a tensor library function.</p>
@@ -374,7 +374,7 @@ Cause: @ on tensor operand self.W w/shape [100, 764] and operand x w/shape [200,
 
 
 
-<h2 id="sec:1.3">1.3 Explaining tensor code without triggering exceptions</h2>
+<h2 id="sec:1.3">Explaining tensor code without triggering exceptions</h2>
 
 
 <p>TensorSensor's <span class=inlinecode>clarify()</span> has no effect unless tensor code triggers an exception. To visualize tensor dimensionality within exception-free Python statements, TensorSensor provides a mechanism called <span class=inlinecode>explain()</span> that is similar to <span class=inlinecode>clarify()</span>, except that <span class=inlinecode>explain()</span> generates a visualization for each statement executed within the block. For example, here's our familiar linear layer computation again but wrapped in an <span class=inlinecode>explain()</span> block and with resulting tensor shape visualization:</p>
@@ -432,7 +432,7 @@ with tsensor.explain():
 
 
 
-<h2 id="sec:1.4">1.4 Visualizing 3D tensors and beyond</h2>
+<h2 id="sec:1.4">Visualizing 3D tensors and beyond</h2>
 
 
 <p>Understanding and debugging code that uses tensors beyond two dimensions can be really challenging.  Unfortunately, this comes up a lot. For example, it's very common to train deep learning networks in batches for performance reasons.  That means reshaping the input matrix, <span class=inlinecode>X</span>, into <span class=inlinecode>n_batches x batch_size x d</span> rather than <span class=inlinecode>n x d</span>. The following code simulates passing multiple batches through a linear layer.</p>
@@ -488,7 +488,7 @@ with tsensor.explain():
 
 
 
-<h2 id="sec:1.5">1.5 Warnings and limitations</h2>
+<h2 id="sec:1.5">Warnings and limitations</h2>
 
 
 <p>There are some important characteristics of TensorSensor to highlight. First, unlike <span class=inlinecode>clarify()</span>, <span class=inlinecode>explain()</span> does not descend into code invoked from the statements in the <span class=inlinecode>with</span> block.  It only visualizes statements within the <span class=inlinecode>with</span> block proper. Every execution of the <span class=inlinecode>with</span> block statement(s) generates a new image and at most one image. In other words, if the <span class=inlinecode>with</span> code is in a loop, you  won't see multiple visualizations for the same statement.</p>
@@ -519,7 +519,7 @@ with tsensor.explain():
 
 
 
-<h2 id="sec:1.6">1.6 Visualizing subexpression tensor shapes</h2>
+<h2 id="sec:1.6">Visualizing subexpression tensor shapes</h2>
 
 
 <p>Most of the time, knowing the shape of the tensor variables referenced in an expression is sufficient to debug a Python statement. Sometimes, however, and operator combining the results of other operators is the source of the problem.  We need a way to visualize the shape of all partial results, which we can do with and upside down tree that shows the data flow and shape of all subexpressions. In the language world, we call that an abstract syntax tree or AST. For example, here is the fake GRU computation set up from above (with a proper <span class=inlinecode>Uxh_</span> definition):</p>
@@ -553,7 +553,7 @@ X = torch.rand(n,d)             # fake input</div>
 
 
 
-<h2 id="sec:1.7">1.7 Key TensorSensor implementation Kung Fu</h2>
+<h2 id="impl">Key TensorSensor implementation Kung Fu</h2>
 
 
 <p><i>And now for something completely different...</i></p>
