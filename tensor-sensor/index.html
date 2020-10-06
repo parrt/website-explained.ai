@@ -84,9 +84,14 @@
 </div>
 
 
-<p>Most people solve deep learning problems using high-level libraries such as Keras or fastai,  which makes sense. These libraries hide a lot of implementation details that we either don't care about or can learn later.  To truly understand deep learning, however, I think it's important at some point to implement your own network layers and training loops. For example, see my recent article called <a href="https://explained.ai/rnn/index.html">Explaining RNNs without neural networks</a>. If you're comfortable building deep learning models while leaving some of the details a bit fuzzy, then this article is not for you.  In my quirky case, I care more about learning something deeply than actually applying it to something useful, so I go straight for the details. (I guess that's why I work at a university, not an industry 😀.)  This article is in response to a pain point I experienced during an obsessive coding and learning burn through the fundamentals of deep learning in the isolation of Covid summer 2020.</p>
+<p>Most people solve deep learning problems using high-level libraries such as <a href="https://keras.io/">Keras</a> or <a href="https://www.fast.ai/">fastai</a>,  which makes sense. These libraries hide a lot of implementation details that we either don't care about or can learn later.  To truly understand deep learning, however, I think it's important at some point to implement your own network layers and training loops. For example, see my recent article called <a href="https://explained.ai/rnn/index.html">Explaining RNNs without neural networks</a>. If you're comfortable building deep learning models while leaving some of the details a bit fuzzy, then this article is not for you.  In my quirky case, I care more about learning something deeply than actually applying it to something useful, so I go straight for the details. (I guess that's why I work at a university, not an industry 😀.)  This article is in response to a pain point I experienced during an obsessive coding and learning burn through the fundamentals of deep learning in the isolation of Covid summer 2020.</p>
 
-<p>One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables.</p>
+<p><center>
+<a href="images/teaser.png">
+<img src="images/teaser.png" width="50%" align="right" url="images/teaser.png">
+</a>
+</center>
+One of the biggest challenges when writing code to implement deep learning networks, particularly for us newbies, is getting all of the tensor (matrix and vector) dimensions to line up properly. It's really easy to lose track of tensor dimensionality in complicated expressions involving multiple tensors and tensor operations. When you ask for improper computations, you're going to run into some less than helpful exception messages.  To help myself and other programmers debug tensor code, I built a new library called <a href="https://github.com/parrt/tensor-sensor">TensorSensor</a> (<span class=inlinecode>pip install tensor-sensor</span>).  TensorSensor clarifies exceptions by augmenting messages and visualizing Python code to indicate the shape of tensor variables. It works with <a href="https://www.tensorflow.org/">Tensorflow</a>, <a href="https://pytorch.org/">PyTorch</a>, and <a href="https://numpy.org/">Numpy</a>, as well as higher-level libraries like <a href="https://keras.io/">Keras</a> and <a href="https://www.fast.ai/">fastai</a>.</p>
 
 
 
@@ -136,7 +141,12 @@ with tsensor.clarify():
 
 
 <p>
-<img src="images/numpy-mm-py.svg" width="20%">
+<a href="images/numpy-mm-py.svg">
+<img nocenter="true" src="images/numpy-mm-py.svg" url="images/numpy-mm-py.svg">
+</a>
+</p>
+
+<p>
 <div class=exception>...
 ValueError: matmul: Input operand ...
 Cause: @ on tensor operand W w/shape (764, 100) and operand X.T w/shape (764, 200)</div>
@@ -180,14 +190,20 @@ with tsensor.clarify():
 </td>
 </tr>
 <tr>
-<td valign=top align="center">
-<img src="images/mm.svg" width="40%">
+<td valign=top align="left">
+
+<a href="images/mm.svg">
+<img nocenter="true" src="images/mm.svg" url="images/mm.svg">
+</a>
+
+
+
 <div class=exception>RuntimeError: size mismatch, m1: [764 x 100], m2: [764 x 200] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
 Cause: @ on tensor operand W w/shape [764, 100] and operand X.T w/shape [764, 200]</div>
 
 <td>
+<img src="images/tf-mm.svg" nocenter="true">
 <html>
-<img src="images/tf-mm.svg" width="70%">
 <div class=exception>InvalidArgumentError: Matrix size-incompatible: In[0]: [764,100], In[1]: [764,200] [Op:MatMul]
 Cause: @ on tensor operand W w/shape (764, 100) and operand tf.transpose(X) w/shape (764, 200)</div>
 </td>
@@ -238,7 +254,10 @@ RuntimeError: size mismatch, m1: [764 x 256], m2: [764 x 200] at /tmp/pip-req-bu
 <p>What we need to know is which operator and operands failed, then we can look at the dimensions to identify the problem.  Here is TensorSensor's visualization and augmented exception message:</p>
 
 <p>
-	<img src="images/torch-gru.svg" width="55%">
+<a href="images/torch-gru.svg">
+<img nocenter="true" src="images/torch-gru.svg" url="images/torch-gru.svg">
+</a>
+
 <div class=exception>---> 10 h_ = torch.tanh(Whh_ @ (r*h) + Uxh_ @ X.T + bh_)
 RuntimeError: size mismatch, m1: [764 x 256], m2: [764 x 200] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
 Cause: @ on tensor operand Uxh_ w/shape [764, 256] and operand X.T w/shape [764, 200]
@@ -277,14 +296,10 @@ with tsensor.clarify():
 <tr>
 <td valign=top align="center">
 
-<center>
-<center>
 <a href="images/torch-nn-linear.svg">
-<img src="images/torch-nn-linear.svg" width="47%" url="images/torch-nn-linear.svg">
+<img nocenter="true" src="images/torch-nn-linear.svg" url="images/torch-nn-linear.svg">
 </a>
-</center>
 
-</center>
 
 </td><td valign=top align="center">
 <div class=exception>RuntimeError: size mismatch, m1: [200 x 200], m2: [764 x 100] at /tmp/pip-req-build-as628lz5/aten/src/TH/generic/THTensorMath.cpp:41
@@ -327,7 +342,10 @@ with tsensor.clarify():
 <p>The <span class=inlinecode>Linear</span> layer has the correct dimensionality on weights <span class=inlinecode>W</span> and bias <span class=inlinecode>b</span>, but the equation in <span class=inlinecode>__call__()</span> incorrectly references <span class=inlinecode>input</span> rather than the transpose of that input matrix, triggering an exception:</p>
 
 <p>
-<img src="images/torch-linear.svg" width="35%">
+<a href="images/torch-linear.svg">
+<img nocenter="true" src="images/torch-linear.svg" url="images/torch-linear.svg">
+</a>
+
 <div class=exception>---------------------------------------------------------------------------
 RuntimeError                              Traceback (most recent call last)
 &lt;ipython-input-20-b6b1bd407c61> in &lt;module>
@@ -369,7 +387,9 @@ with tsensor.explain():
 
 
 <p>
-<img src="images/torch-mm-explain.svg" width="25%">
+<a href="images/torch-mm-explain.svg">
+<img nocenter="true" src="images/torch-mm-explain.svg" url="images/torch-mm-explain.svg">
+</a>
 </p>
 
 <p>It's handy to see the shape of the resulting computation (for <span class=inlinecode>Y</span>). Plus, notice that column vector <span class=inlinecode>b</span> is easily identified visually as a  vertical rectangle (a matrix with a single column). Row vectors are horizontal rectangles:</p>
@@ -381,7 +401,12 @@ with tsensor.explain() as c:
     y = b @ b.T</div>
 
 
-<img src="images/torch-bb.svg" width="19%">
+
+<a href="images/torch-bb.svg">
+<img nocenter="true" src="images/torch-bb.svg" url="images/torch-bb.svg">
+</a>
+
+
 
 <p>Column and row vectors are still 2D matrices, but we can also have 1D tensors:</p>
 
@@ -391,7 +416,11 @@ with tsensor.explain() as c:
     y = torch.dot(b, b)</div>
 
 
-<img src="images/torch-dot.svg" width="32%">
+<p>
+<a href="images/torch-dot.svg">
+<img nocenter="true" src="images/torch-dot.svg" url="images/torch-dot.svg">
+</a>
+</p>
 
 <p>The visualization for 1D tensors look like 2D row vectors but the yellow color (versus pale green) signals that it's 1D. (This is important because tensor libraries often treat 1D vectors and 2D row vectors differently.) The result (<span class=inlinecode>y</span>) is a scalar and, hence, has no visualization component.</p>
 
@@ -433,8 +462,15 @@ with tsensor.explain():
 <p>Here's how TensorSensor visualizes the two statements (despite being in a loop, each visualization is given once):</p>
 
 <p>
-<img src="images/torch-batch-1.svg" width="23%"><br>
-<img src="images/torch-batch-2.svg" width="45%">
+<a href="images/torch-batch-1.svg">
+<img nocenter="true" src="images/torch-batch-1.svg" url="images/torch-batch-1.svg">
+</a>
+</p>
+
+<p>
+<a href="images/torch-batch-2.svg">
+<img nocenter="true" src="images/torch-batch-2.svg" url="images/torch-batch-2.svg">
+</a>
 </p>
 
 <p>To represent the shape of 3D tensors, such as <span class=inlinecode>X</span>, TensorSensor draws an extra box to simulate a three-dimensional perspective, and gives the third dimension at 45 degrees.</p>
@@ -448,7 +484,9 @@ with tsensor.explain():
 
 
 <p>
-<img src="images/torch-4D.svg" width="23%">
+<a href="images/torch-4D.svg">
+<img nocenter="true" src="images/torch-4D.svg" url="images/torch-4D.svg">
+</a>
 </p>
 
 <p>As you can see, dimensions beyond three are shown at the bottom of the 3D representation preceded by an ellipsis. In this case, the fourth dimension is displayed as &ldquo;<span class=inlinecode>...x3</span>&rdquo;.</p>
@@ -477,14 +515,10 @@ X = torch.rand(n,d)             # fake input</div>
 
 
 
-<center>
-<center>
 <a href="images/torch-gru-ast-shapes.svg">
-<img src="images/torch-gru-ast-shapes.svg" width="45%" url="images/torch-gru-ast-shapes.svg">
+<img nocenter="true" src="images/torch-gru-ast-shapes.svg" width="45%" url="images/torch-gru-ast-shapes.svg">
 </a>
-</center>
 
-</center>
 
 
 <p>If you'd like to see just the AST and don't want the statement or expression to be evaluated, pass <span class=inlinecode>frame=None</span> to <span class=inlinecode>astviz()</span>. (Side note: ASTs are generated with <span class=inlinecode>graphviz</span> but the code visualizations use <span class=inlinecode>matplotlib</span>.)</p>
@@ -508,11 +542,10 @@ X = torch.rand(n,d)             # fake input</div>
 
 <p>into this AST with all tokens as leaves:</p>
 
-<p><center>
+<p>
 <a href="images/torch-gru-ast.svg">
-<img src="images/torch-gru-ast.svg" width="45%" url="images/torch-gru-ast.svg">
+<img nocenter="true" src="images/torch-gru-ast.svg" width="45%" url="images/torch-gru-ast.svg">
 </a>
-</center>
 </p>
 
 <p>I used the built-in Python tokenizer, but built my own parser for the subset of statements (assignments, <span class=inlinecode>return</span>) and operations supported by TensorSensor. There is a built-in Python parser, but it generates a different AST than I wanted; plus, filtering the built-in tree structure for just the parts I care about would be about the same amount of work as the parser.  I built the parser using simple recursive descent, rather than adding another dependency (my friend <span class=inlinecode>antlr</span>) to TensorSensor. (See module <span class=inlinecode>tsensor.parser</span>.)</p>
