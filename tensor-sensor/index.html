@@ -522,7 +522,7 @@ with tsensor.explain():
 <h2 id="sec:1.6">Visualizing subexpression tensor shapes</h2>
 
 
-<p>Most of the time, knowing the shape of the tensor variables referenced in an expression is sufficient to debug a Python statement. Sometimes, however, and operator combining the results of other operators is the source of the problem.  We need a way to visualize the shape of all partial results, which we can do with and upside down tree that shows the data flow and shape of all subexpressions. In the language world, we call that an abstract syntax tree or AST. For example, here is the fake GRU computation set up from above (with a proper <span class=inlinecode>Uxh_</span> definition):</p>
+<p>Most of the time, knowing the shape of the tensor variables referenced in an expression is sufficient to debug a Python statement. Sometimes, however, an operator combining the results of other operators is the source of the problem.  We need a way to visualize the shape of all partial results, which we can do with and upside down tree that shows the data flow and shape of all subexpressions. In the language world, we call that an abstract syntax tree or AST. For example, here is the fake GRU computation set up from above (with a proper <span class=inlinecode>Uxh_</span> definition):</p>
 
 
 <div class="codeblk">nhidden = 256
