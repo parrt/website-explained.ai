@@ -104,7 +104,7 @@ One of the biggest challenges when writing code to implement deep learning netwo
 <h2 id="sec:1.1">Isolating issues in tensor code is maddening!</h2>
 
 
-<p>Even for experts, it can be hard to quickly identify the cause of an exception in a line of Python code performing tensor operations.  The debugging process usually involves adding a print statement in front of the offending line to emit the shape of each tensor operand.  That works requires editing the code to create the debugging statement and rerunning the training process. Or, we can manually click or type commands to request all operand shapes using an interactive debugger. (This can be less practical in an IDE like PyCharm where executing code in debug mode seems to be much slower.)  The following subsections illustrate the anemic default exception messages and my proposed TensorSensor approach, rather than a debugger or print statements.</p>
+<p>Even for experts, it can be hard to quickly identify the cause of an exception in a line of Python code performing tensor operations.  The debugging process usually involves adding a print statement in front of the offending line to emit the shape of each tensor operand.  That requires editing the code to create the debugging statement and rerunning the training process. Or, we can manually click or type commands to request all operand shapes using an interactive debugger. (This can be less practical in an IDE like PyCharm where executing code in debug mode seems to be much slower.)  The following subsections illustrate the anemic default exception messages and my proposed TensorSensor approach, rather than a debugger or print statements.</p>
 
 
 
