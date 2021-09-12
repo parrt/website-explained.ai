@@ -97,50 +97,6 @@
 		
 <p><i>This is a book in progress; 9 chapters posted</i>.</p>
 
-
-		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Academic papers</h1>
-
-		<h2><a href="https://arxiv.org/abs/2006.04750">Nonparametric Feature Impact and Importance</a> <font size=1>(June 2020)</font></h2>
-		<a href="https://arxiv.org/abs/2006.04750"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/stratx/raw/master/images/rent-topk-RF-Impact.png" width="200"></a>
-		<p>
-			Practitioners use feature importance to rank and eliminate weak predictors during model development in an effort to simplify models and improve generality. Unfortunately, they also routinely conflate such feature importance measures with feature impact, the isolated effect of an explanatory variable on the response variable. This can lead to real-world consequences when importance is inappropriately interpreted as impact for business or medical insight purposes. The dominant approach for computing importances is through interrogation of a fitted model, which works well for feature selection, but gives distorted measures of feature impact. In this paper, we give mathematical definitions of feature impact and importance, derived from partial dependence curves, that operate directly on the data. To assess quality, we show that features ranked by these definitions are competitive with existing feature selection techniques using three real data sets for predictive tasks.			
-		</p>
-		
-		<h2><a href="https://arxiv.org/abs/1907.06698">Partial Dependence through Stratification</a> <font size=1>(July 2019)</font></h2>
-		<a href="https://arxiv.org/abs/1907.06698"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/stratx/raw/master/images/bulldozer_YearMade_stratpd.png" width=200></a>
-		<p>Partial dependence curves (FPD) introduced by Friedman, are an important model interpretation tool, but are often not accessible to business analysts and scientists who typically lack the skills to choose, tune, and assess machine learning models. It is also common for the same partial dependence algorithm on the same data to give meaningfully different curves for different models, which calls into question their precision. Expertise is required to distinguish between model artifacts and true relationships in the data.  In this paper, we contribute methods for computing partial dependence curves, for both numerical (StratPD) and categorical explanatory variables (CatStratPD), that work directly from training data rather than predictions of a model. Our methods provide a direct estimate of partial dependence, and rely on approximating the partial derivative of an unknown regression function without first fitting a model and then approximating its partial derivative. We investigate settings where contemporary partial dependence methods--including FPD, ALE, and SHAP methods--give biased results. Furthermore, we demonstrate that our approach works correctly on synthetic and plausibly on real data sets. Our goal is not to argue that model-based techniques are not useful. Rather, we hope to open a new line of inquiry into nonparametric partial dependence. <a href="https://github.com/parrt/stratx">Complete source code repo</a> is available and you can "<tt>pip install stratx</tt>".</p>
-
-		<h2><a href="http://www.antlr.org/papers/codebuff.pdf">Towards a Universal Code Formatter through Machine Learning</a> <font size=1>(October 2016)</font></h2>
-		
-		<a href="http://www.antlr.org/papers/codebuff.pdf"><img style="float:left; clear:left; padding: 5px;"  src="images/codebuff-tree.png" width=200></a>
-		<p>This academic paper describes a tool called <a href="https://github.com/antlr/codebuff">CodeBuff</a> (github repo) that automatically derives code formatters for any given programming language without intervention from a language expert, abstracting the formatting rules from a representative corpus. CodeBuff illustrates how even the simplest machine learning model, <i>k</i>-nearest neighbor in this case, can perform very well given sufficiently rich features.</p>
-
-		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Videos</h1>
-
-		<h2 style="margin:0 0 0px;"><a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious">Ya gotta make it obvious</a><br><font size=1>May 2021</font></h2>
-
-		<a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious"><img style="float:left; clear:left; padding: 8px;" src="images/make-obvious.png" width=200></a>
-		<p>This is a talk from <a href="https://rethinkingmlpapers.github.io/">Rethinking ML Papers workshop at ICLR 2021</a> with my thoughts on presenting complex technical subjects, including what's wrong w/traditional academic output. Some bullet points:  "<i>Peer review and our egos ... are the enemy of simplicity and clarity</i>," "<i>Try to illuminate not impress!</i>," and "<i>What we need: correct, deep, and obvious</i>".
-
-		<h2 style="margin:0 0 0px;"><a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious">Deep learning crash course using PyTorch</a><br><font size=1>January 2021</font></h2>
-
-		<a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious"><img style="float:left; clear:left; padding: 8px;" src="images/dlvids.png" width=200></a>
-		<p>A crash course in the basics of deep learning using PyTorch (video comments from <a href="https://www.usfca.edu/faculty/yannet-interian" rel="nofollow">Yannet Interian</a>). Slides <a href="https://github.com/parrt/fundamentals-of-deep-learning/blob/main/lectures/crashcourse.pdf">PDF</a>, <a href="https://github.com/parrt/fundamentals-of-deep-learning/blob/main/lectures/crashcourse.pptx">PPTX</a>.</p>
-			
-			<ol style="margin-left: 200px; margin-top: 0px">
-			<li><a href="https://youtu.be/rAw842OlkfA" rel="nofollow">Machine learning overview</a></li>
-			<li><a href="https://youtu.be/gA97mSPQzDk" rel="nofollow">Deep learning regressors</a></li>
-			<li><a href="https://youtu.be/qU5YfOa_LeI" rel="nofollow">Deep learning classifiers</a></li>
-			<li><a href="https://youtu.be/SIO53mkB7Js" rel="nofollow">Training neural networks</a></li>
-			</ol>
-			
-		<h2 style="margin:0 0 0px;"><a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be">The visual interpretation of decision trees</a><br><font size=1>November 2018</font></h2>
-
-		<a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be"><img style="float:left; clear:left; padding: 8px;" src="images/dtreeviz-parrt.png" width=200></a>
-		<p><b>Subtitle</b>: How to lead a fulfilling life by being dissatisfied.
-		<p>This video is a lecture from the <a href="https://www.meetup.com/USF-Seminar-Series-in-Data-Science">USF seminar series in data science</a>, describing the article <a href="https://explained.ai/decision-tree-viz/index.html">How to visualize decision trees</a> and Python package <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a>.
-		<p>I finish up the lecture with some advice about how dissatisfaction can spur innovation.
-
 		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Libraries</h1>
 		
 		<h2 style="clear:left;"><a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a></h2>
@@ -164,11 +120,54 @@
 		<a href="https://github.com/parrt/autodx"><img style="float:left; clear:left; padding: 5px;" src="images/autodx.png" width=200></a>
 		<p>Simple automatic differentiation via Python operator overloading built to learn how automatic differentiation works, but this repo is more of a junk drawer rather than a library that's ready to use the moment.</p>
 
+
+		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Videos</h1>
+
+		<h2 style="margin:0 0 0px;"><a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious">Ya gotta make it obvious</a><br><font size=1>ICLR conference workshop, May 2021</font></h2>
+
+		<a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious"><img style="float:left; clear:left; padding: 8px;" src="images/make-obvious.png" width=200></a>
+		<p>This is a talk from <a href="https://rethinkingmlpapers.github.io/">Rethinking ML Papers workshop at ICLR 2021</a> with my thoughts on presenting complex technical subjects, including what's wrong w/traditional academic output. Some bullet points:  "<i>Peer review and our egos ... are the enemy of simplicity and clarity</i>," "<i>Try to illuminate not impress!</i>," and "<i>What we need: correct, deep, and obvious</i>".
+
+		<h2 style="margin:0 0 0px;"><a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious">Deep learning crash course using PyTorch</a><br><font size=1>January 2021</font></h2>
+
+		<a href="https://slideslive.com/38957211/ya-gotta-make-it-obvious"><img style="float:left; clear:left; padding: 8px;" src="images/dlvids.png" width=200></a>
+		<p>A crash course in the basics of deep learning using PyTorch (video comments from <a href="https://www.usfca.edu/faculty/yannet-interian" rel="nofollow">Yannet Interian</a>). Slides <a href="https://github.com/parrt/fundamentals-of-deep-learning/blob/main/lectures/crashcourse.pdf">PDF</a>, <a href="https://github.com/parrt/fundamentals-of-deep-learning/blob/main/lectures/crashcourse.pptx">PPTX</a>.</p>
+			
+			<ol style="margin-left: 200px; margin-top: 0px">
+			<li><a href="https://youtu.be/rAw842OlkfA" rel="nofollow">Machine learning overview</a></li>
+			<li><a href="https://youtu.be/gA97mSPQzDk" rel="nofollow">Deep learning regressors</a></li>
+			<li><a href="https://youtu.be/qU5YfOa_LeI" rel="nofollow">Deep learning classifiers</a></li>
+			<li><a href="https://youtu.be/SIO53mkB7Js" rel="nofollow">Training neural networks</a></li>
+			</ol>
+			
+		<h2 style="margin:0 0 0px;"><a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be">The visual interpretation of decision trees</a><br><font size=1>November 2018</font></h2>
+
+		<a href="https://www.youtube.com/watch?v=4FC1D9SuDBc&feature=youtu.be"><img style="float:left; clear:left; padding: 8px;" src="images/dtreeviz-parrt.png" width=200></a>
+		<p><b>Subtitle</b>: How to lead a fulfilling life by being dissatisfied.
+		<p>This video is a lecture from the <a href="https://www.meetup.com/USF-Seminar-Series-in-Data-Science">USF seminar series in data science</a>, describing the article <a href="https://explained.ai/decision-tree-viz/index.html">How to visualize decision trees</a> and Python package <a href="https://github.com/parrt/dtreeviz"><tt>dtreeviz</tt></a>. I finish up the lecture with some advice about how dissatisfaction can spur innovation.</p>
+	
+
+		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">A few academic papers</h1>
+
+		<h2><a href="https://arxiv.org/abs/2006.04750">Nonparametric Feature Impact and Importance</a> <font size=1>(June 2020)</font></h2>
+		<a href="https://arxiv.org/abs/2006.04750"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/stratx/raw/master/images/rent-topk-RF-Impact.png" width="200"></a>
+		<p>
+			Practitioners use feature importance to rank and eliminate weak predictors during model development in an effort to simplify models and improve generality. Unfortunately, they also routinely conflate such feature importance measures with feature impact, the isolated effect of an explanatory variable on the response variable. This can lead to real-world consequences when importance is inappropriately interpreted as impact for business or medical insight purposes. The dominant approach for computing importances is through interrogation of a fitted model, which works well for feature selection, but gives distorted measures of feature impact. In this paper, we give mathematical definitions of feature impact and importance, derived from partial dependence curves, that operate directly on the data.			
+		</p>
+		
+		<h2><a href="https://www.sciencedirect.com/science/article/pii/S2666827021000736">Partial Dependence through Stratification</a> <font size=1>(Machine Learning with Applications Journal 2021)</font></h2>
+		<a href="https://arxiv.org/abs/1907.06698"><img style="float:left; clear:left; padding: 5px;" src="https://github.com/parrt/stratx/raw/master/images/bulldozer_YearMade_stratpd.png" width=200></a>
+		<p>Partial dependence curves (FPD) introduced by Friedman, are an important model interpretation tool, but are often not accessible to business analysts and scientists who typically lack the skills to choose, tune, and assess machine learning models. It is also common for the same partial dependence algorithm on the same data to give meaningfully different curves for different models, which calls into question their precision. Expertise is required to distinguish between model artifacts and true relationships in the data.  In this paper, we contribute methods for computing partial dependence curves, for both numerical (StratPD) and categorical explanatory variables (CatStratPD), that work directly from training data rather than predictions of a model. Our methods provide a direct estimate of partial dependence, and rely on approximating the partial derivative of an unknown regression function without first fitting a model and then approximating its partial derivative. <a href="https://github.com/parrt/stratx">Complete source code repo</a> is available and you can "<tt>pip install stratx</tt>".</p>
+
+		<h2><a href="http://www.antlr.org/papers/codebuff.pdf">Towards a Universal Code Formatter through Machine Learning</a> <font size=1>(International conference on software language engineering, October 2016)</font></h2>
+		
+		<a href="http://www.antlr.org/papers/codebuff.pdf"><img style="float:left; clear:left; padding: 5px;"  src="images/codebuff-tree.png" width=200></a>
+		<p>This academic paper describes a tool called <a href="https://github.com/antlr/codebuff">CodeBuff</a> (github repo) that automatically derives code formatters for any given programming language without intervention from a language expert, abstracting the formatting rules from a representative corpus. CodeBuff illustrates how even the simplest machine learning model, <i>k</i>-nearest neighbor in this case, can perform very well given sufficiently rich features.</p>
+
 		<h1 style="margin:50 0 20px; border-bottom: 1px solid #e5e5e5;">Resources</h1>
 		<h2><a href="/statspeak/index.html">Statisticians say the darndest things</a></h2>
 		
 		<p>The nomenclature used by statisticians is peculiar to say the least, so I thought I'd put this document together. It's meant as good-natured teasing of my friends who are statisticians, but it might actually be useful to other computer scientists.</p>
-				
 	</section>
 	<footer>
 <p style="clear: left;">Copyright &copy; 2021 by Terence Parr.<br>All rights reserved.</p>
