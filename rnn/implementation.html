@@ -277,15 +277,15 @@
 </center>
 <p>That inner loop is equivalent to the following recurrence relation:</p>
 
-<div><img class="blkeqn" src="images/blkeqn-3048294F838BEC17B89CE0457E8359E8.svg" alt="" width="" url="images/blkeqn-3048294F838BEC17B89CE0457E8359E8.svg"></div>
+<div><img class="blkeqn" src="images/blkeqn-3048294F838BEC17B89CE0457E8359E8.svg" alt="" url="images/blkeqn-3048294F838BEC17B89CE0457E8359E8.svg"></div>
 
 <p>The recurrence just says that the value of <span class=eqn>h</span> at iteration <span class=eqn>t</span> is twice its previous value plus the encoding of the <img style="vertical-align: -0.5pt;" src="images/eqn-BF4262990CD6522944323C29B8D2353D-depth000.14.svg"> character; <span class=eqn>t</span> moves from 1 to <span class=eqn>m</span> for <span class=eqn>m</span> characters in the word. For <span class=eqn>x</span> = <span class=inlinecode>cat</span> we get three values of <span class=eqn>h</span> beyond our initial value:</p>
 
-<div><img class="blkeqn" src="images/blkeqn-33E117DC61B77D31604D90FAB16799E3.svg" alt="" width="" url="images/blkeqn-33E117DC61B77D31604D90FAB16799E3.svg"></div>
+<div><img class="blkeqn" src="images/blkeqn-33E117DC61B77D31604D90FAB16799E3.svg" alt="" url="images/blkeqn-33E117DC61B77D31604D90FAB16799E3.svg"></div>
 
 <p>With a little bit of replacement to remove <span class=eqn>h<sub>t</sub></span> values on the right-hand side, we find that the final <span class=eqn>h</span> value is:</p>
 
-<div><img class="blkeqn" src="images/blkeqn-80D2C08B15DB3B525ECC505B91CFB6CC.svg" alt="" width="" url="images/blkeqn-80D2C08B15DB3B525ECC505B91CFB6CC.svg"></div>
+<div><img class="blkeqn" src="images/blkeqn-80D2C08B15DB3B525ECC505B91CFB6CC.svg" alt="" url="images/blkeqn-80D2C08B15DB3B525ECC505B91CFB6CC.svg"></div>
 
 <p>The <b>key take away</b> here is that, despite having a constant multiplier of 2, each character encoding is multiplied by a different number, depending on its position in the sequence: <span class=eqn>x<sub>t</sub></span> is multiplied by <img style="vertical-align: -0.5pt;" src="images/eqn-F266CE269952ABC7C03719D70C88E039-depth000.00.svg">.  This is why <i>cat</i> and <i>act</i> get different encodings.  We've solved the order dependency issue, but it's unlikely that a single integer will ever contain enough information to meaningfully represent a natural language word.</p>
 
@@ -362,7 +362,7 @@
 </tbody>
 </table>
 </center>
-<p>Turning the crank three times yields <img style="vertical-align: -2.1944997pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> as our encoding for <i>cat</i>. Again, multiplying by 2 is nonsense, but the bigger issue is that multiplying by any single scalar is unlikely create a word encoding  meaningful enough to distinguish these words properly.</p>
+<p>Turning the crank three times yields <img style="vertical-align: -2.1954868pt;" src="images/eqn-9B3C2A82E196EF44D1ADF9E2D25F59B4-depth002.09.svg"> as our encoding for <i>cat</i>. Again, multiplying by 2 is nonsense, but the bigger issue is that multiplying by any single scalar is unlikely create a word encoding  meaningful enough to distinguish these words properly.</p>
 
 <p>To make a more sophisticated model, we need to multiply the <span class=inlinecode>h</span> vector by a matrix <span class=eqn>W</span> (<span class=inlinecode>@</span> is the matrix multiply operator), which represents many more model parameters than a lonely scalar value.  There are multiple useful interpretations of matrix-vector multiplication, but it makes the most sense in this case to think of matrix-vector multiplication as transforming a vector into a new space (possibly with different dimensionality). Let's start with the identity matrix as the transformation matrix to see what it looks like:</p>
 <center>
