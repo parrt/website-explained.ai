@@ -42,9 +42,9 @@
 
 <p></p>
 
-<p><a href="http://parrt.cs.usfca.edu">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy Howard</a></p>
+<p><a href="https://www.linkedin.com/in/terence-parr/">Terence Parr</a> and <a href="http://www.fast.ai/about/#jeremy">Jeremy Howard</a></p>
 
-<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:parrt@cs.usfca.edu">Terence</a>.</p>
+<p style="font-size: 80%">Please send comments, suggestions, or fixes to <a href="mailto:terence@parr.us">Terence</a>.</p>
 
 
 
@@ -93,7 +93,7 @@
 <p><img style="vertical-align: -3.4125pt;" src="images/eqn-815417267F76F6F460A4A61F9DB75FDB-depth003.25.svg"><i>which way is down in x direction</i>, <i>which way is down in y direction</i><img style="vertical-align: -3.4125pt;" src="images/eqn-0FBD1776E1AD22C59A7080D35C7FD4DB-depth003.25.svg"> = <img style="vertical-align: -3.4125pt;" src="images/eqn-7DEC1D46E68831C4ECA28B020FCB1604-depth003.25.svg"></p>
 <p>which would indicate a step to the left and forward. To actually move downhill, all we have to do is add the direction vector to the current position to get the new position: <img style="vertical-align: -3.4125pt;" src="images/eqn-030C9A31672A036176CCD49E75C1DE9B-depth003.25.svg">.</p>
 <p>The sign vector works well but does not take into consideration the steepness of the slope in each axis. If the slope is gradual to the left (<span class=eqn>x</span>) but steep to the front (<span class=eqn>y</span>), we might prefer a direction vector of <img style="vertical-align: -3.4125pt;" src="images/eqn-F358F93F9AF42C842FE92DC6EFA4CB90-depth003.25.svg">. The idea is to take big steps along an axis when the slope is steep but small steps when the slope is shallow. As we approach the bottom of the mountain, we should take really small steps to avoid overshooting and going back up the other side.  Updating the current position with a direction vector containing magnitude information, proportional to the slope, automatically takes smaller steps as the slope flattens out.</p>
-<p>Mathematically, we don't move our foot around to learn about the slope of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg">, we  compute the direction vector from the <a href="http://parrt.cs.usfca.edu/doc/matrix-calculus/index.html#sec3">partial derivatives</a> of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg"> with respect to the <span class=eqn>x</span> and <span class=eqn>y</span> dimensions. Such derivatives use notation <img style="vertical-align: -4.9035pt;" src="images/eqn-84D799755A7F73945BD58B2E057121AB-depth004.67.svg"> and <img style="vertical-align: -6.657pt;" src="images/eqn-A2DE2EC029172B84A0A0E8A8D00F5A6F-depth006.34.svg">. If we stack those partial derivatives into a vector, it's called a <i>gradient</i> and is written:</p>
+<p>Mathematically, we don't move our foot around to learn about the slope of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg">, we  compute the direction vector from the <a href="https://explained.ai/matrix-calculus/index.html#sec3">partial derivatives</a> of <img style="vertical-align: -3.4125pt;" src="images/eqn-3BAF1600AE50930A155F58AE172B51BD-depth003.25.svg"> with respect to the <span class=eqn>x</span> and <span class=eqn>y</span> dimensions. Such derivatives use notation <img style="vertical-align: -4.9035pt;" src="images/eqn-84D799755A7F73945BD58B2E057121AB-depth004.67.svg"> and <img style="vertical-align: -6.657pt;" src="images/eqn-A2DE2EC029172B84A0A0E8A8D00F5A6F-depth006.34.svg">. If we stack those partial derivatives into a vector, it's called a <i>gradient</i> and is written:</p>
 <div><img class="blkeqn" src="images/blkeqn-3CB98BE043DBA0D064EBE9375EDAF5F1.svg" alt="" width=""></div>
 <p>The gradient is is actually the opposite or negative of the direction vector we want because the slope always points in the uphill direction. This is easiest to see in two dimensions:</p>
 <p><img src="images/1d-vectors.png" width="40%"></p>
