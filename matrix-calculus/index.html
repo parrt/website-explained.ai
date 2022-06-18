@@ -961,9 +961,9 @@
  	0 & \mathbf{w} \cdot \mathbf{x}_i + b \leq 0\\
  	2(\mathbf{w}\cdot\mathbf{x}_i+b-y_i) & \mathbf{w} \cdot \mathbf{x}_i + b > 0\\
  \end{cases}\\\\
- & = & \begin{cases}
+ & = & \frac{2}{N} \sum_{i=1}^N \begin{cases}
 	0 & \mathbf{w} \cdot \mathbf{x}_i + b \leq 0\\
-	\frac{2}{N} \sum_{i=1}^N (\mathbf{w}\cdot\mathbf{x}_i+b-y_i) & \mathbf{w} \cdot \mathbf{x}_i + b > 0\\
+	\mathbf{w}\cdot\mathbf{x}_i+b-y_i & \mathbf{w} \cdot \mathbf{x}_i + b > 0\\
  \end{cases}
 \end{eqnarray*}
 " url="images/latex-111B8CC26CDC425CE2143E1B38D9B44E.svg"></div>
